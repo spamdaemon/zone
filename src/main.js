@@ -462,7 +462,7 @@
                 }
 
                 try {
-                    recursionGuard[start.__fullName] = true;
+                    recursionGuard[current.__fullName] = true;
 
                     imports = current.__imports || [];
 
@@ -478,7 +478,7 @@
                         resolvable = findResolvable(local, depends, PUBLIC_ACCESS, recursionGuard);
                     }
                 } finally {
-                    recursionGuard[start.__fullName] = false;
+                    recursionGuard[current.__fullName] = false;
                 }
 
                 // check the parent using protected access
