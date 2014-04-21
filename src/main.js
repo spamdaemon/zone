@@ -702,7 +702,8 @@
     };
 
     /**
-     * Define an object or factor function that is publicly accessible.
+     * Associate a value with a public name. If the arguments can be interpreted as a factory function, then the
+     * function will be instantiated and its result used as the exported value.
      * 
      * @expose
      * @param {!string}
@@ -710,13 +711,13 @@
      * @param {...*}
      *            args
      */
-    Module.prototype.define = function(name, args) {
+    Module.prototype.export = function(name, args) {
         ensureMinArgs(arguments, 2);
         return define(this, name, PUBLIC_ACCESS, Array.prototype.slice.call(arguments, 1));
     };
 
     /**
-     * Define a factory object.
+     * Define a module-private factory object.
      * 
      * @expose
      * @param {!string}
@@ -727,11 +728,11 @@
     Module.prototype.factory = function(name, args) {
         ensureMinArgs(arguments, 2);
         var desc = createFunctionDescriptor(Array.prototype.slice.call(arguments, 1));
-        return define(this, name, PUBLIC_ACCESS, [ desc ]);
+        return define(this, name, PRIVATE_ACCESS, [ desc ]);
     };
 
     /**
-     * Define a service object which is defined by a construction function.
+     * Define a module-private service.
      * 
      * @expose
      * @param {!string}
@@ -742,11 +743,11 @@
     Module.prototype.service = function(name, args) {
         ensureMinArgs(arguments, 2);
         var desc = createConstructorDescriptor(Array.prototype.slice.call(arguments, 1));
-        return define(this, name, PUBLIC_ACCESS, [ desc ]);
+        return define(this, name, PRIVATE_ACCESS, [ desc ]);
     };
 
     /**
-     * Create a value object that is public.
+     * Define a module-private value.
      * 
      * @expose
      * @param {!string}
@@ -755,6 +756,51 @@
      *            value a value
      */
     Module.prototype.value = function(name, value) {
+        ensureMinArgs(arguments, 2);
+        var desc = createValueDescriptor(value);
+        return define(this, name, PRIVATE_ACCESS, [ desc ]);
+    };
+
+    /**
+     * Export a public factory object.
+     * 
+     * @expose
+     * @param {!string}
+     *            name the name of the object to be bound
+     * @param {...*}
+     *            args
+     */
+    Module.prototype.exportFactory = function(name, args) {
+        ensureMinArgs(arguments, 2);
+        var desc = createFunctionDescriptor(Array.prototype.slice.call(arguments, 1));
+        return define(this, name, PUBLIC_ACCESS, [ desc ]);
+    };
+
+    /**
+     * Export public a service object which is defined by a construction function.
+     * 
+     * @expose
+     * @param {!string}
+     *            name the name of the object to be bound
+     * @param {...*}
+     *            args
+     */
+    Module.prototype.exportService = function(name, args) {
+        ensureMinArgs(arguments, 2);
+        var desc = createConstructorDescriptor(Array.prototype.slice.call(arguments, 1));
+        return define(this, name, PUBLIC_ACCESS, [ desc ]);
+    };
+
+    /**
+     * Export a public value.
+     * 
+     * @expose
+     * @param {!string}
+     *            name the name of the object to be bound
+     * @param {*}
+     *            value a value
+     */
+    Module.prototype.exportValue = function(name, value) {
         ensureMinArgs(arguments, 2);
         var desc = createValueDescriptor(value);
         return define(this, name, PUBLIC_ACCESS, [ desc ]);
