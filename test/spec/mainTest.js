@@ -486,4 +486,66 @@ describe("zone", function() {
         expect(zone("foo")).toBe(M);
         expect(zone.get("foo")).toBe("bar");
     });
+
+    it("should be able to intercept values", function() {
+        zone("myzone").exportValue("foo", "foo");
+        zone("myzone").interceptor("foo", function() {
+            return function(x) {
+                return "bar";
+            };
+        });
+        expect(zone("myzone").get("foo")).toBe("bar");
+    });
+
+    it("should be able to intercept service or factory objects", function() {
+        zone("myzone").value("BAR", "bar");
+        zone("myzone").exportFactory("foo", function() {
+            return "foo";
+        });
+        zone("myzone").interceptor("foo", [ "BAR" ], function(xbar) {
+            return function(x) {
+                return xbar;
+            };
+        });
+        expect(zone("myzone").get("foo")).toBe("bar");
+    });
+
+    it("interceptors must not refer to the object being intercepted", function() {
+        zone("myzone").factory("BAR", [ "foo" ], function(foo) {
+            return "HAHA";
+        });
+        zone("myzone").exportFactory("foo", function() {
+            return "foo";
+        });
+
+        zone("myzone").interceptor("foo", [ "BAR" ], function(xbar) {
+            return function(x) {
+                return xbar;
+            };
+        });
+
+        var fn = function() {
+            zone("myzone").get("foo");
+        };
+        expect(fn).toThrow();
+    });
+
+    it("should use the correct module for resolving interceptor dependencies", function() {
+        zone("base.extension").interceptor("base.service", [ "greeting" ], function(greeting) {
+            return function(s) {
+                s.say = greeting;
+                return s;
+            };
+        }).value("greeting", "hallo");
+
+        zone("base").protectedService("service", function() {
+            this.say = "hello";
+        }).exportService("greeter", [ "service" ], function(service) {
+            this.greet = service.say;
+        });
+
+
+        expect(zone("base").get("greeter").greet).toBe("hallo");
+    });
+
 });

@@ -11,7 +11,7 @@ module.exports = function(config) {
         files : [
         // sources
         'src/main.js',//
-//        'zone.js',
+        // 'zone.min.js',
         //
         'test/lib/**/*.js',//
         // special tests
@@ -26,7 +26,7 @@ module.exports = function(config) {
 
         // test results reporter to use
         // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
-        reporters : [ 'progress', 'html' ],
+        reporters : [ 'progress' ],
 
         // the default configuration
         htmlReporter : {
@@ -45,7 +45,7 @@ module.exports = function(config) {
 
         // level of logging
         // possible values: LOG_DISABLE || LOG_ERROR || LOG_WARN || LOG_INFO || LOG_DEBUG
-        logLevel : LOG_DEBUG,
+        logLevel : config.LOG_DEBUG,
 
         // enable / disable watching file and executing tests whenever any file changes
         autoWatch : true,

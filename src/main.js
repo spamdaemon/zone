@@ -5,6 +5,11 @@
 (function() {
     "use strict";
 
+    if (this.zone) {
+        console.log("Zone already has been defined");
+        return this.zone;
+    }
+
     /** @const */
     var PRIVATE_ACCESS = 2;
     /** @const */
@@ -127,6 +132,7 @@
         this.__imports = imports;
         this.__sealed = false;
         this.__values = {};
+        this.__interceptors = {};
 
         this.__fullName = name;
 
@@ -239,6 +245,21 @@
     };
 
     /**
+     * An interceptor.
+     * 
+     * @constructor
+     * @final
+     * @param {!Module}
+     *            module the module in which the interceptor will resolve
+     * @param {!FunctionDescriptor}
+     *            descriptor the function used to create the interceptor
+     */
+    var Interceptor = function(module, descriptor) {
+        this.module = module;
+        this.descriptor = descriptor;
+    };
+
+    /**
      * A descriptor for a value.
      * 
      * @constructor
@@ -293,7 +314,7 @@
      * 
      * @param {!Array|!Arguments|!FunctionDescriptor}
      *            args a function or a descriptor
-     * @return {!FunctionDescriptor} a function descriptor
+     * @return {FunctionDescriptor} a function descriptor
      */
     var createConstructorDescriptor = function(args) {
 
@@ -341,11 +362,8 @@
         this.module = module;
         this.name = name;
         this.fullName = makeFullName(module.__fullName, name);
-        if (descriptor instanceof ValueDescriptor) {
-            this.value = descriptor.value;
-        } else {
-            this.descriptor = descriptor;
-        }
+        this.descriptor = descriptor;
+        this.applyInterceptors = true;
 
         switch (access) {
         case PUBLIC_ACCESS:
@@ -395,7 +413,7 @@
     };
 
     /**
-     * Split a name into a module and local name part. If path
+     * Split a name into a module and local name part.
      * 
      * @constructor
      * @final
@@ -407,10 +425,13 @@
     var Path = function(path, module) {
         this.module = module;
         this.local = path;
+        this.modulePath = ".";
+
         var i;
         i = path.lastIndexOf('.');
         if (i >= 0) {
-            this.module = findModule(path.substring(0, i), false);
+            this.modulePath = path.substring(0, i);
+            this.module = findModule(this.modulePath, false);
             this.local = path.substr(i + 1);
         }
     };
@@ -426,7 +447,7 @@
      *            access the type access granted to the module's resolvables
      * @param {!Object}
      *            recursionGuard the recursion guard is necessary to detect cyclic dependencies
-     * @return {Object|null} a resolvable object or null if not found
+     * @return {Resolvable|null} a resolvable object or null if not found
      */
     var findResolvable = function(name, start, access, recursionGuard) {
         var i, n, local, depends;
@@ -486,7 +507,6 @@
                 current = current.__parent;
             }
         }
-        ;
         return resolvable;
     };
 
@@ -569,14 +589,14 @@
     /**
      * Resolve the value of a resolvable object.
      * 
-     * @param {!Object}
+     * @param {!Resolvable}
      *            R the resolve to be instantiated
      * @return {Object} a value for the resolvable
      * @throws Error
      *             if a cyclic dependency was detected
      */
     var resolveValue = function(R) {
-        var fn;
+        var fn, interceptors, interceptor, interceptFN, value, i, n;
 
         if (R.hasOwnProperty("value")) {
             return R.value;
@@ -586,24 +606,43 @@
         }
 
         R.resolving = true;
-        try {
-            fn = injectFunction(R.module, PRIVATE_ACCESS, R.descriptor, false);
-            if (fn === null) {
-                throw new Error("Failed to resolve " + R.fullName);
+        if (R.descriptor instanceof ValueDescriptor) {
+            value = R.descriptor.value;
+        } else {
+
+            try {
+                fn = injectFunction(R.module, PRIVATE_ACCESS, R.descriptor, false);
+                if (fn === null) {
+                    throw new Error("Failed to resolve " + R.fullName);
+                }
+            } finally {
+                delete R.resolving;
             }
-        } finally {
-            delete R.resolving;
-        }
-        try {
-            R.value = fn();
 
-            // the descriptor isn't needed anymore, so clean up
-            delete R.descriptor;
-
-            return R.value;
-        } catch (error) {
-            throw new Error("Failed to resolve " + R.fullName + "\n" + error.toString());
+            try {
+                value = fn();
+            } catch (error) {
+                throw new Error("Failed to resolve " + R.fullName + "\n" + error.toString());
+            }
         }
+
+        interceptors = R.module.__interceptors[R.name] || [];
+
+        // apply all interceptors, which is in arbitrary order
+        for (i = 0, n = interceptors.length; i < n; ++i) {
+            interceptor = interceptors[i];
+            interceptFN = injectFunction(interceptor.module, PRIVATE_ACCESS, interceptor.descriptor, false);
+            if (interceptFN === null) {
+                throw new Error("Failed to resolve interceptor for " + R.name);
+            }
+            value = interceptFN()(value);
+        }
+
+        R.value = value;
+        // the descriptor isn't needed anymore, so clean up
+        delete R.descriptor;
+
+        return R.value;
     };
 
     /**
@@ -661,7 +700,7 @@
      * @expose
      * @param {!string}
      *            name the name of the object to be resolved.
-     * @return {Object} a value
+     * @return {*} a value
      * @throws Exception
      *             if the value could not be created
      */
@@ -681,6 +720,7 @@
      *            name the name of the object to be bound
      * @param {...*}
      *            args
+     * @return {!Module} this module
      */
     Module.prototype.definePrivate = function(name, args) {
         ensureMinArgs(arguments, 2);
@@ -695,6 +735,7 @@
      *            name the name of the object to be bound
      * @param {...*}
      *            args
+     * @return {!Module} this module
      */
     Module.prototype.defineProtected = function(name, args) {
         ensureMinArgs(arguments, 2);
@@ -710,8 +751,9 @@
      *            name the name of the object to be bound
      * @param {...*}
      *            args
+     * @return {!Module} this module
      */
-    Module.prototype.export = function(name, args) {
+    Module.prototype["export"] = function(name, args) {
         ensureMinArgs(arguments, 2);
         return define(this, name, PUBLIC_ACCESS, Array.prototype.slice.call(arguments, 1));
     };
@@ -724,10 +766,43 @@
      *            name the name of the object to be bound
      * @param {...*}
      *            args
+     * @return {!Module} this module
      */
     Module.prototype.factory = function(name, args) {
         ensureMinArgs(arguments, 2);
         var desc = createFunctionDescriptor(Array.prototype.slice.call(arguments, 1));
+        return define(this, name, PRIVATE_ACCESS, [ desc ]);
+    };
+
+    /**
+     * Define a module-private factory object.
+     * 
+     * @expose
+     * @param {!string}
+     *            name the name of the object to be bound
+     * @param {...*}
+     *            args
+     * @return {!Module} this module
+     */
+    Module.prototype.protectedFactory = function(name, args) {
+        ensureMinArgs(arguments, 2);
+        var desc = createFunctionDescriptor(Array.prototype.slice.call(arguments, 1));
+        return define(this, name, PROTECTED_ACCESS, [ desc ]);
+    };
+
+    /**
+     * Define a module-private service.
+     * 
+     * @expose
+     * @param {!string}
+     *            name the name of the object to be bound
+     * @param {...*}
+     *            args
+     * @return {!Module} this module
+     */
+    Module.prototype.service = function(name, args) {
+        ensureMinArgs(arguments, 2);
+        var desc = createConstructorDescriptor(Array.prototype.slice.call(arguments, 1));
         return define(this, name, PRIVATE_ACCESS, [ desc ]);
     };
 
@@ -739,10 +814,57 @@
      *            name the name of the object to be bound
      * @param {...*}
      *            args
+     * @return {!Module} this module
      */
-    Module.prototype.service = function(name, args) {
+    Module.prototype.protectedService = function(name, args) {
         ensureMinArgs(arguments, 2);
         var desc = createConstructorDescriptor(Array.prototype.slice.call(arguments, 1));
+        return define(this, name, PROTECTED_ACCESS, [ desc ]);
+    };
+
+    /**
+     * Define an interceptor for values, factories, and services. The interceptor is invoked when the named object in
+     * this module is resolved for the first time. The interception function can be injected and must return a function
+     * that can be used to inject.
+     * 
+     * @expose
+     * @param {!string}
+     *            name the name of the object to be intercepted
+     * @param {...}
+     *            args an injectable function that produce a function that takes a value and returns a value
+     * @return {!Module} this module
+     */
+    Module.prototype.interceptor = function(name, args) {
+
+        // find the module in which we want
+        var path = new Path(name, this);
+        var module = path.module;
+        if (module === null) {
+            module = findModule(path.modulePath, true);
+        }
+        var descriptor = createFunctionDescriptor(Array.prototype.slice.call(arguments, 1));
+        var interceptor = new Interceptor(this, descriptor);
+        var list = module.__interceptors[path.local];
+        if (!list) {
+            module.__interceptors[path.local] = list = [];
+        }
+        list.push(interceptor);
+        return this;
+    };
+
+    /**
+     * Define a module-private value.
+     * 
+     * @expose
+     * @param {!string}
+     *            name the name of the object to be bound
+     * @param {*}
+     *            value a value
+     * @return {!Module} this module
+     */
+    Module.prototype.value = function(name, value) {
+        ensureMinArgs(arguments, 2);
+        var desc = createValueDescriptor(value);
         return define(this, name, PRIVATE_ACCESS, [ desc ]);
     };
 
@@ -754,11 +876,12 @@
      *            name the name of the object to be bound
      * @param {*}
      *            value a value
+     * @return {!Module} this module
      */
-    Module.prototype.value = function(name, value) {
+    Module.prototype.protectedValue = function(name, value) {
         ensureMinArgs(arguments, 2);
         var desc = createValueDescriptor(value);
-        return define(this, name, PRIVATE_ACCESS, [ desc ]);
+        return define(this, name, PROTECTED_ACCESS, [ desc ]);
     };
 
     /**
@@ -769,6 +892,7 @@
      *            name the name of the object to be bound
      * @param {...*}
      *            args
+     * @return {!Module} this module
      */
     Module.prototype.exportFactory = function(name, args) {
         ensureMinArgs(arguments, 2);
@@ -784,6 +908,7 @@
      *            name the name of the object to be bound
      * @param {...*}
      *            args
+     * @return {!Module} this module
      */
     Module.prototype.exportService = function(name, args) {
         ensureMinArgs(arguments, 2);
@@ -799,6 +924,7 @@
      *            name the name of the object to be bound
      * @param {*}
      *            value a value
+     * @return {!Module} this module
      */
     Module.prototype.exportValue = function(name, value) {
         ensureMinArgs(arguments, 2);
@@ -903,7 +1029,7 @@
      * 
      * @expose
      * @param {!string}
-     *            the name of the object to get
+     *            name the name of the object to get
      * @return {*} an object
      */
     this.zone.get = function(name) {
