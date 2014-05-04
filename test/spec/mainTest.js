@@ -544,8 +544,44 @@ describe("zone", function() {
             this.greet = service.say;
         });
 
-
         expect(zone("base").get("greeter").greet).toBe("hallo");
+    });
+
+    it("should support verify long function declarations", function() {
+
+        zone("object").service(
+                "service",
+                function(a1234567890, b1234567890, c1234567890, d1234567890, e1234567890, f1234567890, g1234567890, h1234567890, i1234567890, j1234567890,
+                        k1234567890, l1234567890, m1234567890, n1234567890, o1234567890, p1234567890, q1234567890) {
+
+                });
+    });
+
+    it("should throw an exception if injection fails", function() {
+        zone().exportService("xxxbar", [ "baz" ], function(baz) {
+        });
+        var fn = zone.inject([ "xxxbar" ], function(bar) {
+        });
+        expect(fn).toThrow();
+    });
+
+    it("should be able to inject a protected object", function() {
+        zone("base").protectedValue("foo", "foo");
+        zone("base.ext").exportFactory("bar", [ "base.foo" ], function(foo) {
+            return foo;
+        });
+
+        expect(zone.get("base.ext.bar")).toBe("foo");
+
+    });
+
+    it("should be not be able to access a proteced object", function() {
+        zone("base").protectedValue("foo", "foo");
+
+        var fn = function() {
+            zone.get("base.ext.foo");
+        };
+        expect(fn).toThrow();
     });
 
 });

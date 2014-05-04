@@ -91,7 +91,7 @@
     };
 
     /**
-     * Parse the formal parameters of a function.
+     * Parse the formal parameters of a function. TODO: use AngularJS function here instead
      * 
      * @param {function(...[*])}
      *            f a function taking an variable number of parameters
@@ -103,11 +103,12 @@
         }
 
         // find the argument names
-        var args = f.toString().match(/^\s*function\s*(?:\w*\s*)?\((.*?)\)/);
+        var fnString = f.toString();
+        var args = fnString.match(/^\s*function\s*(?:\w*\s*)?\(([\s\S]*?)\)/);
         args = args ? (args[1] ? args[1].trim().split(/\s*,\s*/) : []) : null;
 
         if (args === null) {
-            throw new Error("Not a valid function " + f.toString());
+            console.log("Failed to parse the function (perhaps it is too long?) : " + fnString);
         }
 
         return args;
@@ -147,6 +148,25 @@
     };
 
     var ROOT = new Module("", null, []);
+
+    /**
+     * Get the access that a module has with respect to another module.
+     * 
+     * @param {Module}
+     *            source a module that needs access to the target module
+     * @param {Module}
+     *            target a module
+     * @return an access level between two modules
+     */
+    var getAccess = function(source, target) {
+        if (source === target) {
+            return PRIVATE_ACCESS;
+        }
+        while (source && source !== target) {
+            source = source.__parent;
+        }
+        return source === null ? PUBLIC_ACCESS : PROTECTED_ACCESS;
+    };
 
     /**
      * Ensure that a modules does not already have a defined value.
@@ -211,7 +231,7 @@
      */
     var checkFormals = function(names, func) {
         var formals = parseFormalParameters(func);
-        if (formals.length !== names.length) {
+        if (formals !== null && formals.length !== names.length) {
             throw new Error("Formals and parameter names do not match");
         }
     };
@@ -239,6 +259,9 @@
         } else if (typeof args[0] === 'function') {
             this.func = args[0];
             this.names = parseFormalParameters(this.func);
+            if (this.names === null) {
+                throw new Error("Failed to determine function signature");
+            }
         } else {
             throw new Error("Invalid function description");
         }
@@ -457,7 +480,7 @@
         local = path.local;
 
         if (current !== start) {
-            access = PUBLIC_ACCESS;
+            access = Math.min(access, getAccess(start, current));
         }
 
         recursionGuard = recursionGuard || {};
@@ -556,11 +579,17 @@
                 r = findResolvable(name, module, access, {});
 
                 if (r) {
-                    value = resolveValue(r);
+                    try {
+                        value = resolveValue(r);
+                    } catch (error) {
+                        console.log("Injection failed: " + name);
+                        throw error;
+                    }
                     args.push(value);
                 } else if (optional) {
                     args.push(undefined);
                 } else {
+                    console.log("Injectable not found: " + name);
                     return null;
                 }
             }
@@ -611,8 +640,14 @@
         } else {
 
             try {
-                fn = injectFunction(R.module, PRIVATE_ACCESS, R.descriptor, false);
+                try {
+                    fn = injectFunction(R.module, PRIVATE_ACCESS, R.descriptor, false);
+                } catch (error) {
+                    console.log("Failed to resolve " + R.fullName);
+                    throw error;
+                }
                 if (fn === null) {
+                    console.log("Failed to resolve " + R.fullName);
                     throw new Error("Failed to resolve " + R.fullName);
                 }
             } finally {
@@ -631,7 +666,12 @@
         // apply all interceptors, which is in arbitrary order
         for (i = 0, n = interceptors.length; i < n; ++i) {
             interceptor = interceptors[i];
-            interceptFN = injectFunction(interceptor.module, PRIVATE_ACCESS, interceptor.descriptor, false);
+            try {
+                interceptFN = injectFunction(interceptor.module, PRIVATE_ACCESS, interceptor.descriptor, false);
+            } catch (error) {
+                console.log("Interceptor for " + R.fullName + " failed");
+                throw error;
+            }
             if (interceptFN === null) {
                 throw new Error("Failed to resolve interceptor for " + R.name);
             }
@@ -940,7 +980,7 @@
      *            optPath the optional path
      * @param {boolean=}
      *            optPreventImplicitModule true to prevent the module from being created implicitly
-     * @return {!Object}
+     * @return {!Module}
      */
     this.zone = function(optPath, optPreventImplicitModule) {
         if (!optPath) {
