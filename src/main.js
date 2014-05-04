@@ -123,8 +123,8 @@
      *            name the name of the module within the parent
      * @param {Module|null}
      *            parent module
-     * @param {Array|null}
-     *            imports modules
+     * @param {Array=}
+     *            imports the imported modules
      */
     var Module = function(name, parent, imports) {
         this.__name = name;
@@ -709,29 +709,36 @@
      * @expose
      * @param {!string}
      *            name the name of this module within the parent module
-     * @param {Array=}
-     *            imports direct imports of this module (optional)
      */
-    Module.prototype.create = function(name, imports) {
+    Module.prototype.create = function(name) {
         var m;
         if (name.length === 0 || name.indexOf(".") >= 0) {
             throw new Error("Invalid name " + name);
         }
-        if (imports && !isArray(imports)) {
-            throw new Error("Imports are not an array");
-        }
         m = this.__children[name];
-        if (m) {
-            if (imports) {
-                if (m.__imports) {
-                    throw new Error("Module already has imports " + m.__fullName);
-                }
-                m.__imports = imports;
-            }
-        } else {
-            m = new Module(name, this, imports || null);
+        if (!m) {
+            m = new Module(name, this, null);
         }
         return m;
+    };
+
+    /**
+     * Configure this module.
+     * 
+     * @expose
+     * @param {Array=}
+     *            imports direct imports of this module
+     */
+    Module.prototype.configure = function(imports) {
+        if (!isArray(imports)) {
+            throw new Error("Imports are not an array");
+        }
+        if (this.__imports) {
+            throw new Error("Module has already been configured " + this.__fullName);
+        }
+        ensureUnsealed(this);
+        this.__imports = imports.slice();
+        return this;
     };
 
     /**

@@ -7,7 +7,7 @@ describe("tests that reproduce bugs", function() {
     it("should not detect a cyclic dependency when looking up optional value through a sibling", function() {
 
         zone().create("sibling");
-        zone().create("myzone", [ "sibling" ]);
+        zone().create("myzone").configure([ "sibling" ]);
 
         var fn = function() {
             var b = zone.inject([ "?myzone.value" ], function(value) {
@@ -20,7 +20,7 @@ describe("tests that reproduce bugs", function() {
     it("should not detect a cyclic dependency when looking up an object that doesn't exist", function() {
 
         zone().create("sibling");
-        zone().create("myzone", [ "sibling" ]);
+        zone().create("myzone").configure([ "sibling" ]);
 
         var fn = function() {
             var b = zone.inject([ "myzone.value" ], function(value) {

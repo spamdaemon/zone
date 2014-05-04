@@ -28,12 +28,6 @@ module.exports = function(config) {
         // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
         reporters : [ 'progress' ],
 
-        // the default configuration
-        htmlReporter : {
-            outputDir : 'karma_html',
-            templatePath : __dirname + '/jasmine_template.html'
-        },
-
         // web server port
         port : 9876,
 
@@ -60,7 +54,7 @@ module.exports = function(config) {
         // - IE (only Windows)
         browsers : [ //
         'Chrome' //
-        // , 'Firefox'//
+        , 'Firefox'//
         ],
 
         // If browser does not capture in given timeout [ms], kill it
