@@ -5,7 +5,7 @@ module.exports = function(config) {
         basePath : '',
 
         // frameworks to use
-        frameworks : [ 'jasmine' ],
+        frameworks : ['jasmine' ],
 
         // list of files / patterns to load in the browser
         files : [
@@ -26,7 +26,7 @@ module.exports = function(config) {
 
         // test results reporter to use
         // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
-        reporters : [ 'progress' ],
+        reporters : ['progress' ],
 
         // web server port
         port : 9876,
@@ -52,7 +52,7 @@ module.exports = function(config) {
         // - Safari (only Mac)
         // - PhantomJS
         // - IE (only Windows)
-        browsers : [ //
+        browsers : [//
         'Chrome' //
         , 'Firefox'//
         ],
@@ -65,6 +65,6 @@ module.exports = function(config) {
         singleRun : false,
 
         // plugins to load
-        plugins : [ 'karma-jasmine', 'karma-chrome-launcher', 'karma-firefox-launcher', 'karma-html-reporter' ]
+        plugins : ['karma-jasmine', 'karma-chrome-launcher', 'karma-firefox-launcher', 'karma-html-reporter' ]
     });
 };
