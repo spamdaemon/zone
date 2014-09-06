@@ -134,17 +134,17 @@ Modules can import other modules which affects the lookup of objects by a simple
 var child = zone("child").configure(["sibling"]);
 ```
 
-A module can only be configured once and only if the module has not been used for lookups.
+A module can only be configured once and only if the module has not been used for lookups yet.
 
 
 ## Module.get(name)
 
 Lookup a named object in the module. If the name is a simple name, then name is first looked up
-in the module itslef. If the name is not found in the module, then each imported module is checked recursively. If no
+in the module itself. If the name is not found in the module, then each imported module is checked recursively. If no
 imported module defines a value, then the parent of the module is used to lookup the value.
 If the value is not found, then an error is thrown.
 
-```
+```js
 try {
   var foo = zone("child").get("foo");
 }
@@ -162,4 +162,39 @@ zone("child").get("sibling.foo") === zone("sibling").get("foo") === zone.get("si
 
 ## Module.inject(function)
 
-This function creates a new function that when invoked will have bind the inject the correct values into the function.
+This function wraps a given function in a new function and resolves the names of the parameters.
+
+The following code 
+```js
+  var g  = function(foo,bar) { ... };
+  var fn = zone("child").inject(g);
+```
+
+is roughly equivalent to this code:
+```js
+  var g = function(foo,bar) { ... };
+  var fn = function() {
+    var foo = zone("child").get('foo');
+    var bar = zone("child").get('bar');
+    return f(foo,bar);
+  };
+```
+
+Using a slightly different notation for the function, it is also possible for the generated function to take parameters. For example,
+```js
+  var g = function(a,b,x,y) { ... };
+  var fn = zone("child").inject(['foo','bar','#x','#y',g]);
+  var z = fn(1,2);
+```
+
+is roughly equivalent to this code:
+```js
+  var g = function(a,b) { ... };
+  var fn = function(x,y) { 
+    var foo = zone("child").get('foo');
+    var bar = zone("child").get('bar');
+    return f(foo,bar,x,y);
+  };
+  var z = fn(1,2);
+```
+
