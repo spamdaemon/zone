@@ -45,10 +45,8 @@ API
 1. Module
   1. Create Module
     * [Module.create(name)](#modulecreatename)
-    
-  1. Configure Module
     * [Module.configure(imports)](#moduleconfigureimports)
-
+    
   1. Define Objects
     * [Module.definePrivate(name,...)](#moduleDefine)
     * [Module.defineProtected(name,...)](#moduleDefine)
@@ -62,8 +60,7 @@ API
     * [Module.value(name,value)](#moduleValue)
     * [Module.protectedValue(name,value)](#moduleValue)
     * [Module.exportValue(name,value)](#moduleValue)
-  1. Interceptors
-    * [Module.interceptor(name,function)](#moduleInterceptor)
+    
   1. Access Objects
     * [Module.get(name)](#modulegetname)
     * [Module.inject(function)](#moduleinjectfunction)
@@ -111,9 +108,11 @@ catch (notfound) {
   return null;
 }
 ```
+# Module
 
+## Setting up a module
 
-## Module.create(name)
+### Module.create(name)
 
 Use this method to create a child module.
 ```js
@@ -126,7 +125,7 @@ This code is equivalent to
 var child = zone("child");
 ```
 
-## Module.configure(imports)
+### Module.configure(imports)
 
 Modules can import other modules which affects the lookup of objects by a simple name. 
 
@@ -136,7 +135,40 @@ var child = zone("child").configure(["sibling"]);
 
 A module can only be configured once and only if the module has not been used for lookups yet.
 
-## Module.interceptor(name,function)
+## Defining values
+
+### Module.definePrivate(name,...)
+   
+
+### Module.defineProtected(name,...)
+    
+    
+### Module.export(name,...)
+    
+### Module.factory(name,function)
+
+### Module.protectedFactory(name,function)
+   
+### Module.exportFactory(name,function)
+   
+### Module.service(name,constructor)
+    
+### Module.protectedService(name,constructor)
+   
+### Module.exportService(name,constructor)
+   
+### Module.value(name,value)
+   
+   
+### Module.protectedValue(name,value)
+   
+   
+### Module.exportValue(name,value)
+    
+
+## Module Extensions    
+    
+### Module.interceptor(name,function)
 
 It is possible to extend or modify existing module objects by intercepting their creation. The name is 
 that of an object in the module and the function is an injectable function that returns a function of 
@@ -169,7 +201,9 @@ module.exportValue("language",'de');
 So, ```zone.get('greeting.phrase')``` will now always yield "Hallo, Welt!" instead of the default "Hello, World!".
 
 
-## Module.get(name)
+## Getting Values and Injections
+
+### Module.get(name)
 
 Lookup a named object in the module. If the name is a simple name, then name is first looked up
 in the module itself. If the name is not found in the module, then each imported module is checked recursively. If no
@@ -192,7 +226,7 @@ zone("child").get("sibling.foo") === zone("sibling").get("foo") === zone.get("si
 ```
 
 
-## Module.inject(function)
+### Module.inject(function)
 
 This function wraps a given function in a new function and resolves the names of the parameters.
 
