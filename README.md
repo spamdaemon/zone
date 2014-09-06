@@ -136,6 +136,38 @@ var child = zone("child").configure(["sibling"]);
 
 A module can only be configured once and only if the module has not been used for lookups yet.
 
+## Module.interceptor(name,function)
+
+It is possible to extend or modify existing module objects by intercepting their creation. The name is 
+that of an object in the module and the function is an injectable function that returns a function of 
+a single parameter, which is the module object. The following contrived example illustrates how 
+interceptors can be used.
+
+Assume the basic module is define in some file, greeting.js
+```js
+var module = zone("greeting");
+module.exportValue("phrase","Hello, World!");
+```
+
+and that later on some would like to use the greeting, but modify it slightly to support
+greetings in their own language. So, they create a file greeting-de.js
+```js
+var module = zone("greeting");
+module.interceptor("phrase",['language', function(lang) {
+   return function(v) {
+      // if the language is German, return a specific greeting
+      if (lang === 'de') {
+        return "Hallo, Welt!";
+      }
+      // return the default greeting
+      return v;
+   };
+}]);
+
+module.exportValue("language",'de');
+```
+So, ```zone.get('greeting.phrase')``` will now always yield "Hallo, Welt!" instead of the default "Hello, World!".
+
 
 ## Module.get(name)
 
@@ -182,19 +214,23 @@ is roughly equivalent to this code:
 
 Using a slightly different notation for the function, it is also possible for the generated function to take parameters. For example,
 ```js
-  var g = function(a,b,x,y) { ... };
+  var g = function(a,b,x,y) { return [a,b,x,y]; };
+  zone("child").exportValue("foo", 1);
+  zone("child").exportValue("bar", 2);
   var fn = zone("child").inject(['foo','bar','#x','#y',g]);
-  var z = fn(1,2);
+  var z = fn(3,4);
 ```
 
 is roughly equivalent to this code:
 ```js
-  var g = function(a,b) { ... };
+  var g = function(a,b) { return [a,b,x,y]; };
   var fn = function(x,y) { 
     var foo = zone("child").get('foo');
     var bar = zone("child").get('bar');
     return f(foo,bar,x,y);
   };
-  var z = fn(1,2);
+  var z = fn(3,4);
 ```
+
+and will yield the array ```[1,2,3,4]```
 
