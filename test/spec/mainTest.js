@@ -50,7 +50,7 @@ describe("zone", function() {
     it("inject a function with a public value", function() {
         var mine = zone().create("mine");
         mine.export("foo", "bar");
-        var fn = mine.inject(["foo" ], function(foo) {
+        var fn = mine.inject([ "foo" ], function(foo) {
             return foo;
         });
         expect(fn).not.toBeNull();
@@ -76,7 +76,7 @@ describe("zone", function() {
     it("inject a function with a value from a parent module", function() {
         var mine = zone().create("mine");
         zone().export("foo", "bar");
-        var fn = mine.inject(["foo" ], function(foo) {
+        var fn = mine.inject([ "foo" ], function(foo) {
             return foo;
         });
         expect(fn).not.toBeNull();
@@ -86,10 +86,10 @@ describe("zone", function() {
 
     it("inject a function with a value from a included module", function() {
         var mine = zone().create("mine");
-        var yours = zone().create("yours").configure(["mine" ]);
+        var yours = zone().create("yours").configure([ "mine" ]);
 
         mine.export("foo", "bar");
-        var fn = yours.inject(["foo" ], function(foo) {
+        var fn = yours.inject([ "foo" ], function(foo) {
             return foo;
         });
         expect(fn).not.toBeNull();
@@ -111,7 +111,7 @@ describe("zone", function() {
     it("should inject a function with values in a specific order", function() {
         var root = zone();
         var mine = zone().create("mine");
-        var yours = zone().create("yours").configure(["mine" ]);
+        var yours = zone().create("yours").configure([ "mine" ]);
 
         root.defineProtected("bar", "root");
         root.defineProtected("foo", "root");
@@ -123,7 +123,7 @@ describe("zone", function() {
         // search locally first
         var fn, value;
         {
-            fn = yours.inject(["bar" ], function(foo) {
+            fn = yours.inject([ "bar" ], function(foo) {
                 return foo;
             });
             expect(fn).not.toBeNull();
@@ -133,7 +133,7 @@ describe("zone", function() {
 
         // search includes first
         {
-            fn = yours.inject(["foo" ], function(foo) {
+            fn = yours.inject([ "foo" ], function(foo) {
                 return foo;
             });
             expect(fn).not.toBeNull();
@@ -143,7 +143,7 @@ describe("zone", function() {
 
         // search parent last
         {
-            fn = yours.inject(["baz" ], function(foo) {
+            fn = yours.inject([ "baz" ], function(foo) {
                 return foo;
             });
             expect(fn).not.toBeNull();
@@ -153,7 +153,7 @@ describe("zone", function() {
     });
 
     it("should inject private variables", function() {
-        var mine = zone().create("mine").definePrivate("foo", "foo").export("bar", ["foo" ], function(foo) {
+        var mine = zone().create("mine").definePrivate("foo", "foo").export("bar", [ "foo" ], function(foo) {
             return foo;
         });
         var value = mine.get("bar");
@@ -162,7 +162,7 @@ describe("zone", function() {
     });
 
     it("should inject protected variables", function() {
-        var mine = zone().create("mine").defineProtected("foo", "foo").export("bar", ["foo" ], function(foo) {
+        var mine = zone().create("mine").defineProtected("foo", "foo").export("bar", [ "foo" ], function(foo) {
             return foo;
         });
         var value = mine.get("bar");
@@ -170,7 +170,7 @@ describe("zone", function() {
     });
 
     it("should inject  variables with absolute paths", function() {
-        var mine = zone().create("mine").definePrivate("foo", "foo").export("bar", ["yours.foo" ], function(foo) {
+        var mine = zone().create("mine").definePrivate("foo", "foo").export("bar", [ "yours.foo" ], function(foo) {
             return foo;
         });
         zone().create("yours").export("foo", "FOO");
@@ -179,8 +179,8 @@ describe("zone", function() {
     });
 
     it("should detect cyclic module dependencies", function() {
-        zone().create("mine").configure(["yours" ]);
-        var yours = zone().create("yours").configure(["mine" ]);
+        zone().create("mine").configure([ "yours" ]);
+        var yours = zone().create("yours").configure([ "mine" ]);
         var fn = function() {
             return yours.get("X");
         };
@@ -188,7 +188,7 @@ describe("zone", function() {
     });
 
     it("should support references to self", function() {
-        zone().create("mine").configure(["mine" ]);
+        zone().create("mine").configure([ "mine" ]);
         var fn = function() {
             return mine.get("X");
         };
@@ -197,11 +197,11 @@ describe("zone", function() {
 
     it("should detect cyclic module dependencies during injection", function() {
         var mine = zone().create("mine");
-        mine.export("foo", ["yours.bar" ], function(foo) {
+        mine.export("foo", [ "yours.bar" ], function(foo) {
             return "mine.foo";
         });
         var yours = zone().create("yours");
-        yours.export("bar", ["mine.foo" ], function(foo) {
+        yours.export("bar", [ "mine.foo" ], function(foo) {
             return "yours.bar";
         });
         var fn = function() {
@@ -211,11 +211,29 @@ describe("zone", function() {
     });
 
     it("should support optional parameters", function() {
-        zone().export("foo", ["?x.bar" ], function(x) {
+        zone().export("foo", [ "?x.bar" ], function(x) {
             return "foo";
         });
 
         expect(zone().get("foo")).toBe("foo");
+    });
+
+    it("should not support the '#' parameters for factories/constructors", function() {
+
+        var fn = function() {
+            zone().export("foo", [ "#x.bar" ], function(x) {
+                return "foo";
+            });
+        };
+        expect(fn).toThrow();
+    });
+
+    it("should support optional parameters", function() {
+        zone().export("foo", [ "?x.bar" ], function(x) {
+            return x;
+        });
+
+        expect(zone().get("foo")).toBeUndefined();
     });
 
     it("automatically create dependencies from function parameters", function() {
@@ -251,7 +269,7 @@ describe("zone", function() {
 
     it("should not implicitly create a module during injection", function() {
 
-        var fn = zone().inject(["?x.y.z.bar" ], function(x) {
+        var fn = zone().inject([ "?x.y.z.bar" ], function(x) {
             return x ? "Y" : "N";
         });
 
@@ -259,6 +277,16 @@ describe("zone", function() {
 
         fn = function() {
             zone("x.y.z", true);
+        };
+        expect(fn).toThrow();
+    });
+
+    it("should reject invalid paramter names", function() {
+
+        var fn = function() {
+            zone().inject([ "?#bar" ], function(x) {
+                return x ? "Y" : "N";
+            });
         };
         expect(fn).toThrow();
     });
@@ -330,7 +358,7 @@ describe("zone", function() {
         var d1 = zone.asFunction(function(foo) {
             return this;
         });
-        var d2 = zone.asFunction(["foo" ], function(bar) {
+        var d2 = zone.asFunction([ "foo" ], function(bar) {
             return this;
         });
 
@@ -364,7 +392,7 @@ describe("zone", function() {
     it("should implement static injection", function() {
         zone("mine").export("foo", "bar");
 
-        var fn = zone.inject("mine", ["foo" ], function(x) {
+        var fn = zone.inject("mine", [ "foo" ], function(x) {
             return x;
         });
 
@@ -374,7 +402,7 @@ describe("zone", function() {
     it("should implement static injection into the root module", function() {
         zone().export("foo", "bar");
 
-        var fn = zone.inject(["foo" ], function(x) {
+        var fn = zone.inject([ "foo" ], function(x) {
             return x;
         });
 
@@ -393,7 +421,7 @@ describe("zone", function() {
 
     it("should created injected functions that can take arguments", function() {
         zone("mine").export("foo", "foo");
-        var fn = zone.inject("mine", ["foo", "#y", "#z" ], function(x, y, z) {
+        var fn = zone.inject("mine", [ "foo", "#y", "#z" ], function(x, y, z) {
             return x + y + z;
         });
 
@@ -402,7 +430,7 @@ describe("zone", function() {
 
     it("should created injected functions that can take arguments", function() {
         zone("mine").export("foo", "foo");
-        var fn = zone("mine").inject(["foo", "#y", "#z" ], function(x, y, z) {
+        var fn = zone("mine").inject([ "foo", "#y", "#z" ], function(x, y, z) {
             return x + y + z;
         });
 
@@ -480,7 +508,7 @@ describe("zone", function() {
 
     it("should support angular's version of function definition", function() {
         zone().export("foo", "bar");
-        zone().export("service", zone.asFunction(["foo", function(foo) {
+        zone().export("service", zone.asFunction([ "foo", function(foo) {
             return foo;
         } ]));
 
@@ -520,7 +548,7 @@ describe("zone", function() {
         zone("myzone").exportFactory("foo", function() {
             return "foo";
         });
-        zone("myzone").interceptor("foo", ["BAR" ], function(xbar) {
+        zone("myzone").interceptor("foo", [ "BAR" ], function(xbar) {
             return function(x) {
                 return xbar;
             };
@@ -529,14 +557,14 @@ describe("zone", function() {
     });
 
     it("interceptors must not refer to the object being intercepted", function() {
-        zone("myzone").factory("BAR", ["foo" ], function(foo) {
+        zone("myzone").factory("BAR", [ "foo" ], function(foo) {
             return "HAHA";
         });
         zone("myzone").exportFactory("foo", function() {
             return "foo";
         });
 
-        zone("myzone").interceptor("foo", ["BAR" ], function(xbar) {
+        zone("myzone").interceptor("foo", [ "BAR" ], function(xbar) {
             return function(x) {
                 return xbar;
             };
@@ -549,7 +577,7 @@ describe("zone", function() {
     });
 
     it("should use the correct module for resolving interceptor dependencies", function() {
-        zone("base.extension").interceptor("base.service", ["greeting" ], function(greeting) {
+        zone("base.extension").interceptor("base.service", [ "greeting" ], function(greeting) {
             return function(s) {
                 s.say = greeting;
                 return s;
@@ -558,7 +586,7 @@ describe("zone", function() {
 
         zone("base").protectedService("service", function() {
             this.say = "hello";
-        }).exportService("greeter", ["service" ], function(service) {
+        }).exportService("greeter", [ "service" ], function(service) {
             this.greet = service.say;
         });
 
@@ -576,16 +604,16 @@ describe("zone", function() {
     });
 
     it("should throw an exception if injection fails", function() {
-        zone().exportService("xxxbar", ["baz" ], function(baz) {
+        zone().exportService("xxxbar", [ "baz" ], function(baz) {
         });
-        var fn = zone.inject(["xxxbar" ], function(bar) {
+        var fn = zone.inject([ "xxxbar" ], function(bar) {
         });
         expect(fn).toThrow();
     });
 
     it("should be able to inject a protected object", function() {
         zone("base").protectedValue("foo", "foo");
-        zone("base.ext").exportFactory("bar", ["base.foo" ], function(foo) {
+        zone("base.ext").exportFactory("bar", [ "base.foo" ], function(foo) {
             return foo;
         });
 
@@ -602,16 +630,18 @@ describe("zone", function() {
         expect(fn).toThrow();
     });
 
-    it("should support protected factories",function() {
+    it("should support protected factories", function() {
 
-       zone("base").protectedFactory("foo",function() { return "FOO"; });
+        zone("base").protectedFactory("foo", function() {
+            return "FOO";
+        });
 
-      zone("base.derived").exportFactory("bar",["foo"], function(fooFactory) {
-        "use strict";
-        return fooFactory;
-      });
+        zone("base.derived").exportFactory("bar", [ "foo" ], function(fooFactory) {
+            "use strict";
+            return fooFactory;
+        });
 
-      expect(zone("base.derived").get("bar")).toBe("FOO");
+        expect(zone("base.derived").get("bar")).toBe("FOO");
 
     });
 });

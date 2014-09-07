@@ -1,8 +1,7 @@
 Zone API
 ========
 
-This library provides a way to organize code in modules with automatic dependency management. Another
-feature is dependency injection for singleton objects and services.
+This library provides a way to organize code in modules with automatic dependency management. Another feature is dependency injection for singleton objects and services.
 
 
 
@@ -79,17 +78,14 @@ API
 
 ## zone()
 
-Use this function to access the root module. The root module is the module from which 
-all other modules inherit. 
+Use this function to access the root module. The root module is the module from which all other modules inherit. 
 ```js
 var root = zone();
 ```
 
 ## zone(path)
 
-Use this function to access a module by its full pathname. The module's path name is a 
-dot-separated list of simple names. Any modules in the path are implicitly created if they 
-do not already exist.
+Use this function to access a module by its full pathname. The module's path name is a dot-separated list of simple names. Any modules in the path are implicitly created if they do not already exist.
 
 ```js
 var github = zone("com.github");
@@ -97,8 +93,7 @@ var github = zone("com.github");
 
 ## zone(path,preventCreation)
 
-Use this function to access an existing module without implicitly creating any modules. If the
-named module does not exist, then an error is thrown.
+Use this function to access an existing module without implicitly creating any modules. If the named module does not exist, then an error is thrown.
 ```js
 try {
   return zone("com.github",true);
@@ -108,13 +103,41 @@ catch (notfound) {
   return null;
 }
 ```
+
+
 # Module
+
+Modules provide a namespace for name-value pairs. Name-value pairs are constant for the duration of the application, i.e once bound, they cannot be rebound. Modules can be created implicitly or explicitly, but in either case, they can be configured as long as no name lookups have been performed by the module.
+
+Names in a module can be bound as private, protected, or public names. Private names are visible only to other names in the same module, protected names are visible from child modules, and public names are visible by anyone. 
+
+It is possible to use factory functions or constructor functions to provide the value to which name is bound at runtime. These functions are only called once to establish the bound value, for the duration of the module, and they are subject to injection. There are three different ways in which constructor and factory functions can be specified:
+ 1. a normal function, such as `function(foo,bar)`;  when functions are specified in this way, the names of the parameters are used to lookup values in the same module and those values are passed to the function (factory or constructor). 
+	```js
+		zone().factory("add", function(x,y) { return x+y; });
+	```  
+ 1. a two-parameter function is specified as two separate parameters, where the first is an array of names, and the second is the factory or constructor function. Each i'th entry in the array is used to determine the value for the i'th function parameter. 
+	```js
+		zone().factory("add", ["x","y"], function(a,b) { return a+b; });
+	``` 
+ 1. a single array where the first N values are names  and the last value is the factory or constructor function taking N arguments. This is the same format that the angular framework uses.
+	```js
+		zone().factory("add", ["x","y",function(a,b) { return a+b; }]);
+	``` 
+
+The first way of specifying functions is discouraged, because it suffers from a couple of draw-backs:
+ 1. When using code optimizers, such as Google closure, the functions argument names will be changed and so they cannot be used to lookup values anymore.
+ 1. If there are too many parameters, then the injector cannot properly determine the function signature.
+
+On the other hand, using two alternate approaches allow some control over the injected values:
+ 1. If the name starts with a `?` character, then it is assumed to be optional and no error is thrown if the value is unknown. The corresponding function parameter is bound to `undefined`.
 
 ## Setting up a module
 
 ### Module.create(name)
 
-Use this method to create a child module.
+Use this method to create a child module. 
+
 ```js
 var root = zone();
 var child = root.create("child");
@@ -135,45 +158,55 @@ var child = zone("child").configure(["sibling"]);
 
 A module can only be configured once and only if the module has not been used for lookups yet.
 
-## Defining values
+## Defining Values and Object in a Module
+
+A module allows the definition of private, protected, and publicly accessible values. The defined values can be actual values, or functions that provide the value (factory or constructor functions). 
+Private values can only access from within other values or functions in the same module. Protected values can be seen by child modules (and grand-child modules). Public values are accessible from anywhere.
+
+When defining values with constructor or factory functions, then they are eligible for injection. Once a name is bound to a value, it cannot be changed. The constructor or factory functions are only executed once, to define value.
+
 
 ### Module.definePrivate(name,...)
-   
+Define a privately accessible value. The value maybe either a value, function, or a constructor. 
 
 ### Module.defineProtected(name,...)
-    
-    
+Define a protected value. The value maybe either a value, function, or a constructor. 
+
 ### Module.export(name,...)
+Define a public or exported value. The value maybe either a value, function, or a constructor. 
     
 ### Module.factory(name,function)
+Define a privately accessible value via a factory function. The factory function will be executed and its return value is bound to the value of the factory function.
 
 ### Module.protectedFactory(name,function)
+Define a protected value via a factory function. The factory function will be executed and its return value is bound to the value of the factory function.
    
 ### Module.exportFactory(name,function)
+Define a public or exported value via a factory function. The factory function will be executed and its return value is bound to the value of the factory function.
    
 ### Module.service(name,constructor)
-    
+Define a privately accessible value via a constructor function. The constructor function is used to construct the object that is associated with the name.
+  
 ### Module.protectedService(name,constructor)
+Define a protected value via a constructor function. The constructor function is used to construct the object that is associated with the name.
    
 ### Module.exportService(name,constructor)
+Define a public or exported value via a constructor function. The constructor function is used to construct the object that is associated with the name.
    
 ### Module.value(name,value)
-   
-   
+Define a privately accessible value. The value is bound to the name as-is.
+
 ### Module.protectedValue(name,value)
-   
+Define a protected value. The value is bound to the name as-is.
    
 ### Module.exportValue(name,value)
-    
+Define a private or exported value. The value is bound to the name as-is.
 
 ## Module Extensions    
     
 ### Module.interceptor(name,function)
 
-It is possible to extend or modify existing module objects by intercepting their creation. The name is 
-that of an object in the module and the function is an injectable function that returns a function of 
-a single parameter, which is the module object. The following contrived example illustrates how 
-interceptors can be used.
+It is possible to extend or modify existing module objects by intercepting their creation. The name is that of an object in the module and the function is an injectable function that returns a function of a single parameter, which is the module object. The following contrived example illustrates how interceptors can be used.
 
 Assume the basic module is define in some file, greeting.js
 ```js
@@ -181,8 +214,7 @@ var module = zone("greeting");
 module.exportValue("phrase","Hello, World!");
 ```
 
-and that later on some would like to use the greeting, but modify it slightly to support
-greetings in their own language. So, they create a file greeting-de.js
+and that later on some would like to use the greeting, but modify it slightly to support greetings in their own language. So, they create a file greeting-de.js
 ```js
 var module = zone("greeting");
 module.interceptor("phrase",['language', function(lang) {
@@ -198,17 +230,14 @@ module.interceptor("phrase",['language', function(lang) {
 
 module.exportValue("language",'de');
 ```
-So, ```zone.get('greeting.phrase')``` will now always yield "Hallo, Welt!" instead of the default "Hello, World!".
+Thus, ```zone.get('greeting.phrase')``` will now always yield "Hallo, Welt!" instead of the default "Hello, World!".
 
 
 ## Getting Values and Injections
 
 ### Module.get(name)
 
-Lookup a named object in the module. If the name is a simple name, then name is first looked up
-in the module itself. If the name is not found in the module, then each imported module is checked recursively. If no
-imported module defines a value, then the parent of the module is used to lookup the value.
-If the value is not found, then an error is thrown.
+Lookup a named object in the module. If the name is a simple name, then name is first looked up in the module itself. If the name is not found in the module, then each imported module is checked recursively. If no imported module defines a value, then the parent of the module is used to lookup the value. If the value is not found, then an error is thrown.
 
 ```js
 try {
@@ -219,8 +248,7 @@ catch (notfound) {
 }
 ```
 
- If the name is an absolute name this method acts exactly like [zone.get(fullname)](#zonegetfullname). Thus, the following 
- holds true:
+ If the name is an absolute name this method acts exactly like [zone.get(fullname)](#zonegetfullname). Thus, the following holds true:
 ```js
 zone("child").get("sibling.foo") === zone("sibling").get("foo") === zone.get("sibling.foo")
 ```
@@ -268,3 +296,8 @@ is roughly equivalent to this code:
 
 and will yield the array ```[1,2,3,4]```
 
+When using explicit names for the function parameters, then a couple of options are available to control what is injected:
+ 1. if the name starts with a `?`, the corresponding function parameter is optional and if the name cannot be resolved to a value, then it is set to undefined.
+ 1. if the name starts with a `#`, the the corresponding function parameter becomes a parameter of the returned function.
+  
+It is not allowed to use both `?` and `#` in the same name.
