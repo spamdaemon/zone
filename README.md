@@ -47,18 +47,10 @@ API
     * [Module.configure(imports)](#moduleconfigureimports)
     
   1. Define Objects
-    * [Module.definePrivate(name,...)](#moduleDefine)
-    * [Module.defineProtected(name,...)](#moduleDefine)
-    * [Module.export(name,...)](#moduleDefine)
     * [Module.factory(name,function)](#moduleFactory)
-    * [Module.protectedFactory(name,function)](#moduleFactory)
-    * [Module.exportFactory(name,function)](#moduleFactory)
     * [Module.service(name,constructor)](#moduleService)
-    * [Module.protectedService(name,constructor)](#moduleService)
-    * [Module.exportService(name,constructor)](#moduleService)
     * [Module.value(name,value)](#moduleValue)
-    * [Module.protectedValue(name,value)](#moduleValue)
-    * [Module.exportValue(name,value)](#moduleValue)
+    * [Module.constant(name,value)](#moduleConstant)
     
   1. Access Objects
     * [Module.get(name)](#modulegetname)
@@ -160,47 +152,39 @@ A module can only be configured once and only if the module has not been used fo
 
 ## Defining Values and Object in a Module
 
-A module allows the definition of private, protected, and publicly accessible values. The defined values can be actual values, or functions that provide the value (factory or constructor functions). 
-Private values can only access from within other values or functions in the same module. Protected values can be seen by child modules (and grand-child modules). Public values are accessible from anywhere.
+A module allows the definition of four types of values to a name:
+ * factory functions are functions that return the value that will ultimately be bound
+ * service functions are constructors that will be used to create an object that will be bound the name
+ * values a primitive values or objects that are bound as is to a name
+ * constant values are frozen and sealed values that are bound to a name in the module
 
-When defining values with constructor or factory functions, then they are eligible for injection. Once a name is bound to a value, it cannot be changed. The constructor or factory functions are only executed once, to define value.
+When registering a value, function, etc. with a module, the name can be used to indicate public, protected, or private access for the value. To indicate access level use
+ * public: the name starts with a '+' character
+ * protected: the name starts with a '#' character
+ * private: the name starts with a '-' character
+If no access level indication is provided, then public access is assumed. Note that the access level indicator is not part of the registered name. For example,
+```js
+zone().value('+foo','bar');
+zone().get('foo');
+```
 
+Factory functions and service constructors are eligible for injection. The functions are only executed once, upon the first lookup of the symbol to which they are bound. Once bound, the value returned is the same for the lifetime of the module.
 
-### Module.definePrivate(name,...)
-Define a privately accessible value. The value maybe either a value, function, or a constructor. 
+It is possible to use interceptors on the first lookup of a named to modify the value or even return a new value.
 
-### Module.defineProtected(name,...)
-Define a protected value. The value maybe either a value, function, or a constructor. 
-
-### Module.export(name,...)
-Define a public or exported value. The value maybe either a value, function, or a constructor. 
     
 ### Module.factory(name,function)
-Define a privately accessible value via a factory function. The factory function will be executed and its return value is bound to the value of the factory function.
-
-### Module.protectedFactory(name,function)
-Define a protected value via a factory function. The factory function will be executed and its return value is bound to the value of the factory function.
-   
-### Module.exportFactory(name,function)
-Define a public or exported value via a factory function. The factory function will be executed and its return value is bound to the value of the factory function.
+Bind a factory function to a name within the given module. The factory function will be executed and its return value is the value returned upon lookup or injection of the name. 
    
 ### Module.service(name,constructor)
-Define a privately accessible value via a constructor function. The constructor function is used to construct the object that is associated with the name.
+Bind a constructor function to the given name in the module. The constructor is invoked upon the first lookup of the name and the created object is returned upon each lookup of the name. 
   
-### Module.protectedService(name,constructor)
-Define a protected value via a constructor function. The constructor function is used to construct the object that is associated with the name.
-   
-### Module.exportService(name,constructor)
-Define a public or exported value via a constructor function. The constructor function is used to construct the object that is associated with the name.
-   
 ### Module.value(name,value)
-Define a privately accessible value. The value is bound to the name as-is.
+Bind a value to a name in the module.
 
-### Module.protectedValue(name,value)
-Define a protected value. The value is bound to the name as-is.
-   
-### Module.exportValue(name,value)
-Define a private or exported value. The value is bound to the name as-is.
+### Module.constant(name,value)
+Bind a constant value to a name in the module. If the value is a function or object, then it is frozen
+and sealed and can thus not be modified in any way.
 
 ## Module Extensions    
     

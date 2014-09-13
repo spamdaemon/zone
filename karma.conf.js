@@ -10,10 +10,9 @@ module.exports = function(config) {
         // list of files / patterns to load in the browser
         files : [
         // sources
-        'src/main.js',//
-        // 'zone.min.js',
+       // 'src/main.js',//
+        'zone.min.js',
         //
-        'test/lib/**/*.js',//
         // special tests
         'test/spec/**/*Test.js'//
         //

@@ -6,7 +6,7 @@
     'use strict';
 
     if (this.zone) {
-        console.log('Zone already has been defined');
+        console.log('Zone has already been defined');
         return this.zone;
     }
 
@@ -21,6 +21,35 @@
 
     // all modules
     var MODULES = {};
+
+    /**
+     * Given a name, determine the access and type values.
+     * 
+     * @param {!string}
+     *            name
+     * @return {*} an object indicating the protected level and type
+     */
+    var parseName = function(name) {
+        var result = {};
+        switch (name[0]) {
+        case '-':
+            result.access = PRIVATE_ACCESS;
+            result.name = name.substr(1);
+            break;
+        case '+':
+            result.access = PUBLIC_ACCESS;
+            result.name = name.substr(1);
+            break;
+        case '#':
+            result.access = PROTECTED_ACCESS;
+            result.name = name.substr(1);
+            break;
+        default:
+            result.access = PUBLIC_ACCESS;
+            result.name = name;
+        }
+        return result;
+    };
 
     /**
      * Ensure that there is a minimum number of arguments.
@@ -825,53 +854,9 @@
     };
 
     /**
-     * Define a private object which is only accessible to functions defined in this module.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to be bound
-     * @param {...*}
-     *            var_args
-     * @return {!Module} this module
-     */
-    Module.prototype.definePrivate = function(name, var_args) {
-        ensureMinArgs(arguments, 2);
-        return define(this, name, PRIVATE_ACCESS, Array.prototype.slice.call(arguments, 1));
-    };
-
-    /**
-     * Define a private object which is only accessible to functions defined in this module or nested modules.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to be bound
-     * @param {...*}
-     *            var_args
-     * @return {!Module} this module
-     */
-    Module.prototype.defineProtected = function(name, var_args) {
-        ensureMinArgs(arguments, 2);
-        return define(this, name, PROTECTED_ACCESS, Array.prototype.slice.call(arguments, 1));
-    };
-
-    /**
-     * Associate a value with a public name. If the arguments can be interpreted as a factory function, then the
-     * function will be instantiated and its result used as the exported value.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to be bound
-     * @param {...*}
-     *            var_args
-     * @return {!Module} this module
-     */
-    Module.prototype['export'] = function(name, var_args) {
-        ensureMinArgs(arguments, 2);
-        return define(this, name, PUBLIC_ACCESS, Array.prototype.slice.call(arguments, 1));
-    };
-
-    /**
-     * Define a module-private factory object.
+     * Define a factory object. The name starts with modifier characters, such as, '#', '+', '-' then the value will
+     * accessible as protected, public, or private respectively. If no access modier is provided, then access default to
+     * public access.
      * 
      * @expose
      * @param {!string}
@@ -883,27 +868,14 @@
     Module.prototype.factory = function(name, var_args) {
         ensureMinArgs(arguments, 2);
         var desc = createFunctionDescriptor(Array.prototype.slice.call(arguments, 1));
-        return define(this, name, PRIVATE_ACCESS, [ desc ]);
+        var parsedName = parseName(name);
+        return define(this, parsedName.name, parsedName.access, [ desc ]);
     };
 
     /**
-     * Define a module-private factory object.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to be bound
-     * @param {...*}
-     *            var_args
-     * @return {!Module} this module
-     */
-    Module.prototype.protectedFactory = function(name, var_args) {
-        ensureMinArgs(arguments, 2);
-        var desc = createFunctionDescriptor(Array.prototype.slice.call(arguments, 1));
-        return define(this, name, PROTECTED_ACCESS, [ desc ]);
-    };
-
-    /**
-     * Define a module-private service.
+     * Define a service. The name starts with modifier characters, such as, '#', '+', '-' then the value will accessible
+     * as protected, public, or private respectively. If no access modier is provided, then access default to public
+     * access.
      * 
      * @expose
      * @param {!string}
@@ -915,23 +887,56 @@
     Module.prototype.service = function(name, var_args) {
         ensureMinArgs(arguments, 2);
         var desc = createConstructorDescriptor(Array.prototype.slice.call(arguments, 1));
-        return define(this, name, PRIVATE_ACCESS, [ desc ]);
+        var parsedName = parseName(name);
+        return define(this, parsedName.name, parsedName.access, [ desc ]);
     };
 
     /**
-     * Define a module-private service.
+     * Define a value. The name starts with modifier characters, such as, '#', '+', '-' then the value will accessible
+     * as protected, public, or private respectively. If no access modier is provided, then access default to public
+     * access.
      * 
      * @expose
      * @param {!string}
      *            name the name of the object to be bound
-     * @param {...*}
-     *            var_args
+     * @param {*}
+     *            value a value
      * @return {!Module} this module
      */
-    Module.prototype.protectedService = function(name, var_args) {
+    Module.prototype.value = function(name, value) {
         ensureMinArgs(arguments, 2);
-        var desc = createConstructorDescriptor(Array.prototype.slice.call(arguments, 1));
-        return define(this, name, PROTECTED_ACCESS, [ desc ]);
+        var desc = createValueDescriptor(value);
+        var parsedName = parseName(name);
+        return define(this, parsedName.name, parsedName.access, [ desc ]);
+    };
+
+    /**
+     * Define a constant value. The name starts with modifier characters, such as, '#', '+', '-' then the value will
+     * accessible as protected, public, or private respectively. If no access modier is provided, then access default to
+     * public access.
+     * <p>
+     * This method will freeze and seal the provided constant value.
+     * 
+     * @expose
+     * @param {!string}
+     *            name the name of the object to be bound
+     * @param {*}
+     *            value a value
+     * @return {!Module} this module
+     */
+    Module.prototype.constant = function(name, value) {
+        ensureMinArgs(arguments, 2);
+        if (value !== null) {
+            var type = typeof value;
+            // only objects can be frozen
+            if (type === 'object' || type === 'function') {
+                Object.freeze(value);
+                Object.seal(value);
+            }
+        }
+        var desc = createValueDescriptor(value);
+        var parsedName = parseName(name);
+        return define(this, parsedName.name, parsedName.access, [ desc ]);
     };
 
     /**
@@ -964,86 +969,6 @@
         }
         list.push(interceptor);
         return this;
-    };
-
-    /**
-     * Define a module-private value.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to be bound
-     * @param {*}
-     *            value a value
-     * @return {!Module} this module
-     */
-    Module.prototype.value = function(name, value) {
-        ensureMinArgs(arguments, 2);
-        var desc = createValueDescriptor(value);
-        return define(this, name, PRIVATE_ACCESS, [ desc ]);
-    };
-
-    /**
-     * Define a module-private value.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to be bound
-     * @param {*}
-     *            value a value
-     * @return {!Module} this module
-     */
-    Module.prototype.protectedValue = function(name, value) {
-        ensureMinArgs(arguments, 2);
-        var desc = createValueDescriptor(value);
-        return define(this, name, PROTECTED_ACCESS, [ desc ]);
-    };
-
-    /**
-     * Export a public factory object.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to be bound
-     * @param {...*}
-     *            var_args
-     * @return {!Module} this module
-     */
-    Module.prototype.exportFactory = function(name, var_args) {
-        ensureMinArgs(arguments, 2);
-        var desc = createFunctionDescriptor(Array.prototype.slice.call(arguments, 1));
-        return define(this, name, PUBLIC_ACCESS, [ desc ]);
-    };
-
-    /**
-     * Export public a service object which is defined by a construction function.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to be bound
-     * @param {...*}
-     *            var_args
-     * @return {!Module} this module
-     */
-    Module.prototype.exportService = function(name, var_args) {
-        ensureMinArgs(arguments, 2);
-        var desc = createConstructorDescriptor(Array.prototype.slice.call(arguments, 1));
-        return define(this, name, PUBLIC_ACCESS, [ desc ]);
-    };
-
-    /**
-     * Export a public value.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to be bound
-     * @param {*}
-     *            value a value
-     * @return {!Module} this module
-     */
-    Module.prototype.exportValue = function(name, value) {
-        ensureMinArgs(arguments, 2);
-        var desc = createValueDescriptor(value);
-        return define(this, name, PUBLIC_ACCESS, [ desc ]);
     };
 
     /**
