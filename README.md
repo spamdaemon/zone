@@ -47,23 +47,26 @@ API
     * [Module.configure(imports)](#moduleconfigureimports)
     
   1. Define Objects
-    * [Module.factory(name,function)](#moduleFactory)
-    * [Module.service(name,constructor)](#moduleService)
-    * [Module.value(name,value)](#moduleValue)
-    * [Module.constant(name,value)](#moduleConstant)
-    
+    * [Module.factory(name,function)](#modulefactorynamefunction)
+    * [Module.service(name,constructor)](#moduleservicenameconstructor)
+    * [Module.value(name,value)](#modulevaluenamevalue)
+    * [Module.constant(name,value)](#moduleconstantnamevalue)
+
+  1. Module Extensions    
+    * [Module.interceptor(name,function)](#moduleinterceptornamefunction)
+  
   1. Access Objects
     * [Module.get(name)](#modulegetname)
     * [Module.inject(function)](#moduleinjectfunction)
   
-1. Core Helpers
-  * [zone.asFunction(function)](#asFunction)
-  * [zone.asConstructor(constructor)](#asConstructor)
-  * [zone.asValue(value)](#asValue)
-  * [zone.inject(function)](#inject)
-  * [zone.inject(modulePath,function)](#inject)
+1. Zone Functions
+  * [zone.asFunction(function)](#zoneasfunctionfunction)
+  * [zone.asConstructor(constructor)](#zoneasconstructorconstructor)
+  * [zone.asValue(value)](#zoneasvaluevalue)
+  * [zone.inject(function)](#zoneinjectfunction)
+  * [zone.inject(modulePath,function)](#zoneinjectmodulepathfunction)
   * [zone.get(fullname)](#zonegetfullname)
-  * [zone.reset()](#reset)
+  * [zone.reset()](#zonereset)
 
 
 # Core
@@ -152,17 +155,18 @@ A module can only be configured once and only if the module has not been used fo
 
 ## Defining Values and Object in a Module
 
-A module allows the definition of four types of values to a name:
- * factory functions are functions that return the value that will ultimately be bound
- * service functions are constructors that will be used to create an object that will be bound the name
- * values a primitive values or objects that are bound as is to a name
- * constant values are frozen and sealed values that are bound to a name in the module
+A module allows the binding of four types of values to a name:
+ * factory: functions that return the value to be bound
+ * service: constructors, whose instantiations become the bound values
+ * value: these values are bound as is
+ * constant: these values are frozen and sealed, but otherwise are bound as is
 
-When registering a value, function, etc. with a module, the name can be used to indicate public, protected, or private access for the value. To indicate access level use
+When registering a value, function, etc. with a module, the name can be used to indicate public, protected, or private access for the value. The following shows how to indicate the access level:
  * public: the name starts with a '+' character
  * protected: the name starts with a '#' character
  * private: the name starts with a '-' character
-If no access level indication is provided, then public access is assumed. Note that the access level indicator is not part of the registered name. For example,
+ 
+If no access level indicator is provided, then public access is assumed. Note that the access level indicator is not part of the registered name. For example,
 ```js
 zone().value('+foo','bar');
 zone().get('foo');
@@ -170,21 +174,43 @@ zone().get('foo');
 
 Factory functions and service constructors are eligible for injection. The functions are only executed once, upon the first lookup of the symbol to which they are bound. Once bound, the value returned is the same for the lifetime of the module.
 
-It is possible to use interceptors on the first lookup of a named to modify the value or even return a new value.
+It is possible to use interceptors on the first lookup of a name to modify the value or even return a new value.
 
     
 ### Module.factory(name,function)
 Bind a factory function to a name within the given module. The factory function will be executed and its return value is the value returned upon lookup or injection of the name. 
+
+```js
+ zone().factory("foo",function() { 
+    return "The Bound Value";
+ });
+```
    
 ### Module.service(name,constructor)
 Bind a constructor function to the given name in the module. The constructor is invoked upon the first lookup of the name and the created object is returned upon each lookup of the name. 
   
+```js
+ // inject bar into the service
+ zone().service("foo",['bar'], function(b) { 
+    this.get = function() { return b; };
+ });
+```
+
 ### Module.value(name,value)
 Bind a value to a name in the module.
+
+```js
+ zone().value("foo",{ name : "FOO"});
+```
 
 ### Module.constant(name,value)
 Bind a constant value to a name in the module. If the value is a function or object, then it is frozen
 and sealed and can thus not be modified in any way.
+
+```js
+ zone().constant("Owner",{ name : "John Doe"});
+```
+
 
 ## Module Extensions    
     
@@ -195,7 +221,7 @@ It is possible to extend or modify existing module objects by intercepting their
 Assume the basic module is define in some file, greeting.js
 ```js
 var module = zone("greeting");
-module.exportValue("phrase","Hello, World!");
+module.value("phrase","Hello, World!");
 ```
 
 and that later on some would like to use the greeting, but modify it slightly to support greetings in their own language. So, they create a file greeting-de.js
@@ -212,7 +238,7 @@ module.interceptor("phrase",['language', function(lang) {
    };
 }]);
 
-module.exportValue("language",'de');
+module.value("language",'de');
 ```
 Thus, ```zone.get('greeting.phrase')``` will now always yield "Hallo, Welt!" instead of the default "Hello, World!".
 
@@ -261,8 +287,8 @@ is roughly equivalent to this code:
 Using a slightly different notation for the function, it is also possible for the generated function to take parameters. For example,
 ```js
   var g = function(a,b,x,y) { return [a,b,x,y]; };
-  zone("child").exportValue("foo", 1);
-  zone("child").exportValue("bar", 2);
+  zone("child").value("foo", 1);
+  zone("child").value("bar", 2);
   var fn = zone("child").inject(['foo','bar','#x','#y',g]);
   var z = fn(3,4);
 ```
@@ -285,3 +311,43 @@ When using explicit names for the function parameters, then a couple of options 
  1. if the name starts with a `#`, the the corresponding function parameter becomes a parameter of the returned function.
   
 It is not allowed to use both `?` and `#` in the same name.
+
+# Zone Functions
+## zone.asFunction(function)
+ TBD
+ 
+## zone.asConstructor(constructor)
+ TBD
+ 
+## zone.asValue(value)
+ TBD
+
+## zone.inject(function)
+
+This function works similar to [zone.inject(modulePath,function)](#zoneinjectmodulepathfunction), but uses the root module for lookup.
+ 
+## zone.inject(modulePath,function)
+
+Wrap the provided function inside a new function. When the new wrapper function is invoked, the parameters for the original function are bound by looking up values relative to the provided module.
+Note that the wrapper function can be created even before the module has been completely defined. Only when the wrapper function is called must the module be properly defined.
+
+The following example shows a Jasmine unit test for this feature:
+```js
+  var fn = zone.inject("child",['foo', function(f) { return f; }]);
+  expect(fn).toThrow();
+  zone("child").value("foo",'bar');
+  expect(fn()).toBe('bar')
+```
+ 
+## zone.get(fullname)
+
+Get the value associated with the full name of a bound value.
+  
+```js
+  zone.get('child.value') === zone('child').get('value')
+  zone.get('value') === zone().get('value')
+```
+ 
+## zone.reset()
+
+Use this to clear out all bindings. This is a hack, but it's useful for unit testing.
