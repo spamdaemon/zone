@@ -647,7 +647,7 @@ describe("zone", function() {
     });
 
     it("should support null values and constants", function() {
-        var base = zone("base").constant("foo", null).value('bar',null);
+        var base = zone("base").constant("foo", null).value('bar', null);
         expect(base.get('foo')).toBeNull();
         expect(base.get('bar')).toBeNull();
     });
@@ -671,12 +671,27 @@ describe("zone", function() {
         } ]);
         expect(child.get('bar')).toBe('HELLO');
     });
-    
+
     it("should support explicit private access for constants", function() {
         var base = zone("base").constant("-foo", 'HELLO').factory('baz', [ 'foo', function(f) {
             return f;
         } ]);
-                
+
         expect(base.get('baz')).toBe('HELLO');
+    });
+
+    it("should be able to intercept values from anywhere using a generic function", function() {
+        zone("myzone").value("foo", "foo");
+        zone("myzone").value("bar", "bar");
+        zone().interceptor(function(m,l) {
+            console.log("Intercepting "+m+"  "+l);
+            return true;
+        }, function() {
+            return function(x) {
+                return x + "intercepted";
+            };
+        });
+        expect(zone("myzone").get("foo")).toBe("foointercepted");
+        expect(zone("myzone").get("bar")).toBe("barintercepted");
     });
 });

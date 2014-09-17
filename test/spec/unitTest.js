@@ -41,4 +41,26 @@ describe("zone for unit testing", function() {
         expect(z).toEqual([ 1, 2, 3, 4 ]);
     });
 
+    it("should pass the name of the intercepted obejct on to the interception function", function() {
+        zone("myzone").value("foo", "bar");
+        var interceptedModule;
+        var interceptedLocal;
+        var interceptedValue;
+
+        zone().interceptor(function() {
+            return true;
+        }, function() {
+            return function(v, m, l) {
+                interceptedModule = m;
+                interceptedLocal = l;
+                interceptedValue = v;
+                return v + 'intercepted';
+            };
+        });
+        expect(zone("myzone").get("foo")).toBe("barintercepted");
+        expect(interceptedModule).toBe("myzone");
+        expect(interceptedLocal).toBe("foo");
+        expect(interceptedValue).toBe("bar");
+    });
+
 });

@@ -13,7 +13,7 @@ rule :sources do
 end
 
 rule "#{PROJECT()}.js" => :sources  do |p,n|
-  echo "Cat'ing ##{n.flatten.join(' ')} into #{p.file}"
+  echo "Cat'ing #{n.flatten.join(' ')} into #{p.file}"
   shell "cat #{n.flatten.join(' ')} > #{p}"
   p.file
 end
@@ -32,7 +32,7 @@ rule '%.min.js.gz' => "{1}.min.js" do | p,n|
 end
 
 rule :test => [ 'zone.min.js.gz', 'karma.conf.js' ] do
-  #shell "karma start --single-run --log-level debug"
+  shell "karma start --single-run --log-level debug"
   true
 end
 

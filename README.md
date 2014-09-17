@@ -228,7 +228,7 @@ and that later on some would like to use the greeting, but modify it slightly to
 ```js
 var module = zone("greeting");
 module.interceptor("phrase",['language', function(lang) {
-   return function(v) {
+   return function(v,moduleName,VariableName) {
       // if the language is German, return a specific greeting
       if (lang === 'de') {
         return "Hallo, Welt!";
@@ -242,6 +242,18 @@ module.value("language",'de');
 ```
 Thus, ```zone.get('greeting.phrase')``` will now always yield "Hallo, Welt!" instead of the default "Hello, World!".
 
+
+Interceptors can also take a ```function(moduleName,localName)``` as the first parameter to provide a more generic mechanism for intercepting values. For example, using this interceptor, name resolutions can be logged:
+```js
+zone().interceptor(function() {
+	return true;
+}, function() {
+    return function(v, m, l) {
+       console.log("Trace: "+m+", "+l+" : "+JSON.stringify(v));
+       return v;
+    };
+});
+```
 
 ## Getting Values and Injections
 
