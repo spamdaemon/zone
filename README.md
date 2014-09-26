@@ -2,7 +2,7 @@ Zone API
 ========
 
 This library provides a way to organize code in modules with automatic dependency management. Another feature is dependency injection for singleton objects and services.
-
+This is small library is basically inspired by angularjs.
 
 
 Features
@@ -12,12 +12,6 @@ Zone provides the ability to
 * define modules hierarchically
 * define public, protected, and private objects
 * inject defined objects into functions
-
-
-TODO
-----
-
-
 
 
 Unit Testing
@@ -30,7 +24,7 @@ and [Karma](http://karma-runner.github.io/).
 Contribute
 ----------
 
-If you find this project useful and want to report a problem, please provide a unit test case.
+If you find this project useful, I'd like to know. If you want to report a problem, please provide a unit test case.
 
 
 API
