@@ -2,7 +2,7 @@
  * A private object that maintains and creates modules.
  * 
  */
-(function() {
+(function(console) {
     'use strict';
 
     if (this.zone) {
@@ -773,7 +773,7 @@
                 if (interceptFN === null) {
                     throw new Error('Failed to resolve interceptor for ' + R.name);
                 }
-                value = interceptFN()(value,R.module.__fullName, R.name);
+                value = interceptFN()(value, R.module.__fullName, R.name);
             }
         }
 
@@ -1124,4 +1124,7 @@
     };
 
     return this.zone;
-}).call(this);
+}).call(this, console || {
+    log : function() {
+    }
+});
