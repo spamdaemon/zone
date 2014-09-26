@@ -24,7 +24,7 @@ and [Karma](http://karma-runner.github.io/).
 Contribute
 ----------
 
-If you find this project useful, I'd like to know. If you want to report a problem, please provide a unit test case.
+If you find this project useful, please let me know. If you want to report a problem, please provide a unit test case.
 
 
 API
