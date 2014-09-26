@@ -61,6 +61,7 @@ API
   * [zone.inject(modulePath,function)](#zoneinjectmodulepathfunction)
   * [zone.get(fullname)](#zonegetfullname)
   * [zone.reset()](#zonereset)
+  * [zone.version()](#zoneversion)
 
 
 # Core
@@ -357,3 +358,7 @@ Get the value associated with the full name of a bound value.
 ## zone.reset()
 
 Use this to clear out all bindings. This is a hack, but it's useful for unit testing.
+
+## zone.version()
+
+Returns a string for the current version of zone.
