@@ -12,7 +12,7 @@ rule :sources do
   shell 'find src -name \*.js'
 end
 
-rule "#{PROJECT()}.js" => :sources  do |p,n|
+rule "#{PROJECT()}.js" => dependency_of(:sources)  do |p,n|
   echo "Cat'ing #{n.flatten.join(' ')} into #{p.file}"
   shell "cat #{n.flatten.join(' ')} > #{p}"
   p.file
