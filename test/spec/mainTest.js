@@ -333,16 +333,32 @@ describe("zone", function() {
         expect(fn).toThrow();
     });
 
-    it("should bind 'this' to the module in which the object is found", function() {
+    it("should bind 'this' to the null in factory functions", function() {
         var m = zone("mine");
         m.factory("foo", function() {
             return this;
         });
         var v = m.create("child").get("foo");
-        expect(v).toBe(m);
+        expect(v).toBe(null);
     });
 
-    it("should bind 'this' to the module in which the object is found", function() {
+    it("should bind 'this' to the service ", function() {
+        var m = zone("mine");
+        var THIS = null;
+        
+        m.service("foo", function() {
+            THIS = this;
+            this.get = function() {
+                return this;
+            }
+        });
+        
+        var srv = m.get("foo");
+        expect(THIS).toBe(srv);
+        expect(THIS).toBe(srv.get());
+    });
+
+    it("should bind 'this' to the in-scope 'this' pointer", function() {
         var m = zone("mine");
         var c = m.create("child");
         m.value("foo", {});
@@ -350,9 +366,10 @@ describe("zone", function() {
         var fn = function(foo) {
             return this;
         };
-        var v = c.inject(fn)();
+        var THIS = {};
+        var v = c.inject(fn).apply(THIS);
 
-        expect(v).toBe(c);
+        expect(v).toBe(THIS);
     });
 
     it("should create a function descriptor", function() {
@@ -362,13 +379,14 @@ describe("zone", function() {
         var d2 = zone.asFunction([ "foo" ], function(bar) {
             return this;
         });
+        var THIS = {};
 
         zone().value("foo", {});
 
-        var v = zone().inject(d1)();
-        expect(v).toBe(zone());
-        v = zone().inject(d2)();
-        expect(v).toBe(zone());
+        var v = zone().inject(d1).apply(THIS);
+        expect(v).toBe(THIS);
+        v = zone().inject(d2).apply(THIS);
+        expect(v).toBe(THIS);
     });
 
     it("should support function descriptors for define* functions", function() {
@@ -683,8 +701,8 @@ describe("zone", function() {
     it("should be able to intercept values from anywhere using a generic function", function() {
         zone("myzone").value("foo", "foo");
         zone("myzone").value("bar", "bar");
-        zone().interceptor(function(m,l) {
-            console.log("Intercepting "+m+"  "+l);
+        zone().interceptor(function(m, l) {
+            console.log("Intercepting " + m + "  " + l);
             return true;
         }, function() {
             return function(x) {

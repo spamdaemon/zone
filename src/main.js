@@ -338,7 +338,7 @@
                 throw new Error('Failed to determine function signature');
             }
         } else {
-            throw new Error('Invalid function description');
+            throw new Error('Invalid function description' + JSON.stringify(args));
         }
     };
 
@@ -639,23 +639,25 @@
      *            descriptor the descriptor for the function
      * @param {boolean}
      *            allowFreeArguments true to allow free arguments
+     * @param {boolean}
+     *            bindModuleToThis if true, then the this pointer for the returned function is bound the the module
      * @return {function()|null} a function that calls the specified function with the appropriately injected values or
      *         null if the injection failed
      * @throws Error
      *             if a cyclic dependency was detected
      */
-    var injectFunction = function(module, access, descriptor, allowFreeArguments) {
+    var injectFunction = function(module, access, descriptor, allowFreeArguments, bindModuleToThis) {
         var i, n, isConstructor, freeArgs, args, r;
         var name, value, optional, names, func;
 
         names = descriptor.names;
         func = descriptor.func;
         isConstructor = descriptor.isConstructor;
-
         freeArgs = [];
 
         // loop over each argument name and instantiate it as well
-        args = [ module ];
+        // putting module into args[0] will bind the null to this
+        args = [ null ];
 
         for (i = 0, n = names.length; i < n; ++i) {
             name = names[i];
@@ -697,7 +699,9 @@
             for (i = 0; i < n; ++i) {
                 args[freeArgs[i]] = arguments[i];
             }
-
+            if (!bindModuleToThis) {
+                args[0] = this;
+            }
             // create a new function
             var FN = Function.prototype.bind.apply(func, args);
 
@@ -738,7 +742,7 @@
 
             try {
                 try {
-                    fn = injectFunction(R.module, PRIVATE_ACCESS, R.descriptor, false);
+                    fn = injectFunction(R.module, PRIVATE_ACCESS, R.descriptor, false, true);
                 } catch (error) {
                     console.log('Failed to resolve ' + R.fullName);
                     throw error;
@@ -765,7 +769,7 @@
             interceptor = interceptors[i];
             if (interceptor.selector(R.module.__fullName, R.name)) {
                 try {
-                    interceptFN = injectFunction(interceptor.module, PRIVATE_ACCESS, interceptor.descriptor, false);
+                    interceptFN = injectFunction(interceptor.module, PRIVATE_ACCESS, interceptor.descriptor, false, true);
                 } catch (error) {
                     console.log('Interceptor for ' + R.fullName + ' failed');
                     throw error;
@@ -785,7 +789,7 @@
     };
 
     /**
-     * Inject a function with values from this module. The this pointer will be bound to this module.
+     * Inject a function with values from this module. The this pointer will be bound to the current this pointer.
      * 
      * @expose
      * @param {...}
@@ -795,7 +799,7 @@
     Module.prototype.inject = function(var_args) {
         var descriptor = createFunctionDescriptor(arguments);
         descriptor.validateInjectionParameterNames("#?", "");
-        var fn = injectFunction(this, PUBLIC_ACCESS, descriptor, true);
+        var fn = injectFunction(this, PUBLIC_ACCESS, descriptor, true, false);
         if (fn === null) {
             throw new Error('Failed to create injected function');
         }
