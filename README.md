@@ -60,6 +60,7 @@ API
   * [zone.inject(function)](#zoneinjectfunction)
   * [zone.inject(modulePath,function)](#zoneinjectmodulepathfunction)
   * [zone.get(fullname)](#zonegetfullname)
+  * [zone.makeZone()](#zonemakezone)
   * [zone.reset()](#zonereset)
   * [zone.version()](#zoneversion)
 
@@ -355,9 +356,19 @@ Get the value associated with the full name of a bound value.
   zone.get('value') === zone().get('value')
 ```
  
+## zone.makeZone()
+
+Create a new empty zone. This function is primarily useful for unit testing or setting up a local
+zone that need be shared globally. 
+```js
+  var zone2 = zone.makeZone();
+  zone2("mine").value('foo','bar');
+```
+
 ## zone.reset()
 
-Use this to clear out all bindings. This is a hack, but it's useful for unit testing.
+Reset this zone to a pristine state. This method is probably only usful during
+unit testing, when setting up a test. This function returns no value.
 
 ## zone.version()
 

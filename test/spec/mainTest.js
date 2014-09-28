@@ -345,14 +345,14 @@ describe("zone", function() {
     it("should bind 'this' to the service ", function() {
         var m = zone("mine");
         var THIS = null;
-        
+
         m.service("foo", function() {
             THIS = this;
             this.get = function() {
                 return this;
             }
         });
-        
+
         var srv = m.get("foo");
         expect(THIS).toBe(srv);
         expect(THIS).toBe(srv.get());
@@ -711,5 +711,15 @@ describe("zone", function() {
         });
         expect(zone("myzone").get("foo")).toBe("foointercepted");
         expect(zone("myzone").get("bar")).toBe("barintercepted");
+    });
+
+    it("should make a new and pristine zone", function() {
+        zone().value("foo", "bar");
+        var zone2 = zone.makeZone();
+        var fn = function() {
+            return zone2.get("foo");
+        };
+
+        expect(fn).toThrow();
     });
 });

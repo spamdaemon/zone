@@ -20,7 +20,7 @@ end
 
 rule '%.min.js' => [ "{1}.js",'brickfile.rb']  do | p,n|
     echo "Compiling #{n[0]} --> #{p}"
-    shell "java -jar #{COMPILER_JAR()} --compilation_level ADVANCED_OPTIMIZATIONS --js_output_file #{p} #{n[0]}"
+    shell "java -jar #{COMPILER_JAR()} -W VERBOSE --compilation_level ADVANCED_OPTIMIZATIONS --js_output_file #{p} #{n[0]}"
     p.file
 end
 

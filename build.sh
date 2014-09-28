@@ -12,7 +12,7 @@ SOURCES=`find src -name \*.js`
 # compile to minify
 rm -f  ${PROJECT_NAME}.min.js ${PROJECT_NAME}.min.js.gz
 if [ -e $COMPILER_JAR ]; then
-    java -jar ${COMPILER_JAR} --compilation_level ADVANCED_OPTIMIZATIONS --js_output_file ${PROJECT_NAME}.min.js ${SOURCES};
+    java -jar ${COMPILER_JAR}  -W VERBOSE --compilation_level ADVANCED_OPTIMIZATIONS --js_output_file ${PROJECT_NAME}.min.js ${SOURCES};
     gzip --best --keep ${PROJECT_NAME}.min.js;
 fi;
 

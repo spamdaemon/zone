@@ -19,9 +19,6 @@
     /** @const */
     var PUBLIC_ACCESS = 0;
 
-    // all modules
-    var MODULES = {};
-
     /**
      * Given a name, determine the access and type values.
      * 
@@ -117,22 +114,6 @@
     };
 
     /**
-     * Create a fullname.
-     * 
-     * @param {!string}
-     *            prefix a prefix
-     * @param {!string}
-     *            suffix a suffix
-     * @return {!string} the concatenated name
-     */
-    var makeFullName = function(prefix, suffix) {
-        if (prefix === '') {
-            return suffix;
-        }
-        return prefix + '.' + suffix;
-    };
-
-    /**
      * Determine if an object is an array
      * 
      * @param {*}
@@ -187,6 +168,22 @@
     };
 
     /**
+     * Create a fullname.
+     * 
+     * @param {!string}
+     *            prefix a prefix
+     * @param {!string}
+     *            suffix a suffix
+     * @return {!string} the concatenated name
+     */
+    var makeFullName = function(prefix, suffix) {
+        if (prefix === '') {
+            return suffix;
+        }
+        return prefix + '.' + suffix;
+    };
+
+    /**
      * The Module constructor function.
      * 
      * @constructor
@@ -204,7 +201,6 @@
         this.__imports = opt_imports;
         this.__sealed = false;
         this.__values = {};
-
         this.__fullName = name;
 
         if (parent) {
@@ -212,15 +208,27 @@
                 throw new Error('Module ' + this.__fullName + ' already contains a module ' + name);
             }
             this.__fullName = makeFullName(parent.__fullName, name);
+            this.__root = parent.__root;
             parent.__children[name] = this;
         } else {
-            // interceptors only on the ROOT module
+            // set up these before initializing the rest of the module
             this.__interceptors = [];
+            this.__root = this;
+            this.__modules = {};
+
         }
-        MODULES[this.__fullName] = this;
+        // register this module with the root module
+        this.__root.__modules[this.__fullName] = this;
     };
 
-    var ROOT = new Module('', null, []);
+    /**
+     * Create a root module.
+     * 
+     * @return {!Module} a root module
+     */
+    var newRootModule = function() {
+        return new Module('', null, []);
+    };
 
     /**
      * Get the access that a module has with respect to another module.
@@ -275,23 +283,45 @@
      * Find a module by searching either from the start or the root. A search is performed from the root if the name is
      * an absolute name, i.e. contains .
      * 
+     * @param {!Module}
+     *            root the root module
      * @param {!string}
      *            name the name of the module
      * @param {boolean}
      *            createIfNotFound
      * @return {Module} the module or null
      */
-    var findModule = function(name, createIfNotFound) {
-        var m = MODULES[name], names, i, n;
+    var findModule = function(root, name, createIfNotFound) {
+        var m = root.__modules[name], names, i, n;
         m = m || null;
         if (!m && createIfNotFound) {
             names = name.split(/\./);
-            m = ROOT;
+            m = root;
             for (i = 0, n = names.length; i < n; ++i) {
                 m = m.create(names[i], null);
             }
         }
         return m;
+    };
+
+    /**
+     * Get a module by its path.
+     * 
+     * @param {!string=}
+     *            opt_path the optional path
+     * @param {boolean=}
+     *            opt_preventImplicitModule true to prevent the module from being created implicitly
+     * @return {!Module}
+     */
+    var getModule = function(root, opt_path, opt_preventImplicitModule) {
+        if (!opt_path) {
+            return root;
+        }
+        var m = findModule(root, opt_path, !opt_preventImplicitModule);
+        if (m) {
+            return m;
+        }
+        throw new Error('Module not found ' + opt_path);
     };
 
     /**
@@ -535,12 +565,14 @@
      * 
      * @constructor
      * @final
+     * @param {!Module}
+     *            root the root module
      * @param {!string}
      *            path a path name to parse
      * @param {!Module}
      *            module the default module
      */
-    var Path = function(path, module) {
+    var Path = function(root, path, module) {
         this.module = module;
         this.local = path;
         this.modulePath = '.';
@@ -549,7 +581,7 @@
         i = path.lastIndexOf('.');
         if (i >= 0) {
             this.modulePath = path.substring(0, i);
-            this.module = findModule(this.modulePath, false);
+            this.module = findModule(root, this.modulePath, false);
             this.local = path.substr(i + 1);
         }
     };
@@ -570,7 +602,7 @@
     var findResolvable = function(name, start, access, recursionGuard) {
         var i, n, local, depends;
         var current, resolvable, imports;
-        var path = new Path(name, start);
+        var path = new Path(start.__root, name, start);
         current = path.module;
         local = path.local;
 
@@ -610,7 +642,7 @@
 
                     // check the imports
                     for (i = 0, n = imports.length; i < n && !resolvable; ++i) {
-                        depends = findModule(imports[i], false);
+                        depends = findModule(start.__root, imports[i], false);
                         if (depends === null) {
                             throw new Error('Invalid dependency : ' + imports[i]);
                         }
@@ -640,13 +672,13 @@
      * @param {boolean}
      *            allowFreeArguments true to allow free arguments
      * @param {boolean}
-     *            bindModuleToThis if true, then the this pointer for the returned function is bound the the module
+     *            bindNullToThis if true, then the this pointer for the returned function is bound the the module
      * @return {function()|null} a function that calls the specified function with the appropriately injected values or
      *         null if the injection failed
      * @throws Error
      *             if a cyclic dependency was detected
      */
-    var injectFunction = function(module, access, descriptor, allowFreeArguments, bindModuleToThis) {
+    var injectFunction = function(module, access, descriptor, allowFreeArguments, bindNullToThis) {
         var i, n, isConstructor, freeArgs, args, r;
         var name, value, optional, names, func;
 
@@ -699,7 +731,7 @@
             for (i = 0; i < n; ++i) {
                 args[freeArgs[i]] = arguments[i];
             }
-            if (!bindModuleToThis) {
+            if (!bindNullToThis) {
                 args[0] = this;
             }
             // create a new function
@@ -762,7 +794,7 @@
             }
         }
 
-        interceptors = ROOT.__interceptors || [];
+        interceptors = R.module.__root.__interceptors || [];
 
         // apply all interceptors, which is in arbitrary order
         for (i = 0, n = interceptors.length; i < n; ++i) {
@@ -975,10 +1007,10 @@
         var module = this;
         if (typeof selector === 'string') {
             // find the module in which we want
-            var path = new Path(selector, this);
+            var path = new Path(this.__root, selector, this);
             module = path.module;
             if (module === null) {
-                module = findModule(path.modulePath, true);
+                module = findModule(this.__root, path.modulePath, true);
             }
             // selector is just a local name
             selector = function(m, l) {
@@ -993,140 +1025,160 @@
         var descriptor = createFunctionDescriptor(args);
         descriptor.validateInjectionParameterNames("?", "#");
         // register the interceptor with the root module
-        ROOT.__interceptors.push(new Interceptor(this, selector, descriptor));
+        this.__root.__interceptors.push(new Interceptor(this, selector, descriptor));
         return this;
     };
 
-    /**
-     * Find a module. If no module is specified, then returns the root module.
-     * 
-     * @expose
-     * @param {!string=}
-     *            opt_path the optional path
-     * @param {boolean=}
-     *            opt_preventImplicitModule true to prevent the module from being created implicitly
-     * @return {!Module}
-     */
-    this.zone = function(opt_path, opt_preventImplicitModule) {
-        if (!opt_path) {
-            return ROOT;
-        }
-        var m = findModule(opt_path, !opt_preventImplicitModule);
-        if (m) {
-            return m;
-        }
-        throw new Error('Module not found ' + opt_path);
-    };
+    var newZone = function() {
 
-    /**
-     * Create a function descriptor. This value may be passed to any of the define functions or the inject function.
-     * 
-     * @expose
-     * @param {...*}
-     *            var_args
-     * @return {FunctionDescriptor} a function descriptor
-     */
-    this.zone.asFunction = function(var_args) {
-        checkArguments(arguments, 1, 2);
-        return createFunctionDescriptor(arguments);
-    };
+        /**
+         * @type {!Module}
+         */
+        var ROOT = newRootModule();
 
-    /**
-     * Create a descriptor for a constructor function. Functions defined as constructors will be instantiated using the
-     * new operator during injection time.
-     * 
-     * @expose
-     * @param {...*}
-     *            var_args
-     * @return {FunctionDescriptor} a function descriptor
-     */
-    this.zone.asConstructor = function(var_args) {
-        checkArguments(arguments, 1, 2);
-        return createConstructorDescriptor(arguments);
-    };
-
-    /**
-     * Create a descriptor for a value. This function can be used in some circumstances to disambiguate different
-     * function representations.
-     * 
-     * @expose
-     * @param {Object}
-     *            value a value
-     * @return {ValueDescriptor} a value descriptor
-     */
-    this.zone.asValue = function(value) {
-        checkArguments(arguments, 1, 1);
-        return createValueDescriptor(value);
-    };
-
-    /**
-     * An injection function. This works much like zone(name).inject(...). It's very useful to this use this during
-     * testing.
-     * 
-     * @expose
-     * @param {!string=}
-     *            opt_name the name of optional module which to use for injection
-     * @param {...}
-     *            var_args the arguments
-     * @return {function()} a function
-     */
-    this.zone.inject = function(opt_name, var_args) {
-        checkArguments(arguments, 1, 3);
-
-        var module = '';
-        var args = arguments;
-        if (typeof arguments[0] === 'string') {
-            module = opt_name;
-            args = Array.prototype.slice.call(args, 1);
+        /**
+         * Find a module. If no module is specified, then returns the root module.
+         * 
+         * @expose
+         * @param {!string=}
+         *            opt_path the optional path
+         * @param {boolean=}
+         *            opt_preventImplicitModule true to prevent the module from being created implicitly
+         * @return {!Module}
+         */
+        var zone = function(opt_path, opt_preventImplicitModule) {
+            // do not call
+            return getModule(ROOT, opt_path, opt_preventImplicitModule);
         }
 
-        var descriptor = createFunctionDescriptor(args);
-        var zm = this.zone;
-        
-        return function() {
-            var m = zm(module, true);
-            var fn = m.inject(descriptor);
-            return fn.apply(null, arguments);
+        /**
+         * Create a function descriptor. This value may be passed to any of the define functions or the inject function.
+         * 
+         * @expose
+         * @param {...*}
+         *            var_args
+         * @return {FunctionDescriptor} a function descriptor
+         */
+        zone.asFunction = function(var_args) {
+            checkArguments(arguments, 1, 2);
+            return createFunctionDescriptor(arguments);
         };
+
+        /**
+         * Create a descriptor for a constructor function. Functions defined as constructors will be instantiated using
+         * the new operator during injection time.
+         * 
+         * @expose
+         * @param {...*}
+         *            var_args
+         * @return {FunctionDescriptor} a function descriptor
+         */
+        zone.asConstructor = function(var_args) {
+            checkArguments(arguments, 1, 2);
+            return createConstructorDescriptor(arguments);
+        };
+
+        /**
+         * Create a descriptor for a value. This function can be used in some circumstances to disambiguate different
+         * function representations.
+         * 
+         * @expose
+         * @param {Object}
+         *            value a value
+         * @return {ValueDescriptor} a value descriptor
+         */
+        zone.asValue = function(value) {
+            checkArguments(arguments, 1, 1);
+            return createValueDescriptor(value);
+        };
+
+        /**
+         * An injection function. This works much like zone(name).inject(...). It's very useful to use this during
+         * testing. Note that the lookup of the injections are only made when the resulting function is invoked.
+         * 
+         * @expose
+         * @param {!string=}
+         *            opt_name the name of optional module which to use for injection
+         * @param {...}
+         *            var_args the arguments
+         * @return {function()} a function
+         */
+        zone.inject = function(opt_name, var_args) {
+            checkArguments(arguments, 1, 3);
+
+            var THIS = this;
+            var module = '';
+            var args = arguments;
+            if (typeof arguments[0] === 'string') {
+                module = opt_name;
+                args = Array.prototype.slice.call(args, 1);
+            }
+
+            var descriptor = createFunctionDescriptor(args);
+
+            return function() {
+                var m = getModule(ROOT, module, true);
+                var fn = m.inject(descriptor);
+                return fn.apply(this, arguments);
+            };
+        };
+
+        /**
+         * Get a public value by its global name.
+         * 
+         * @expose
+         * @param {!string}
+         *            name the name of the object to get
+         * @return {*} an object
+         */
+        zone.get = function(name) {
+            checkArguments(arguments, 1, 1);
+
+            var path = new Path(ROOT, name, ROOT);
+            if (path.module === null) {
+                throw new Error('Not found ' + name);
+            }
+            return path.module.get(path.local);
+        };
+
+        /**
+         * Reset this zone to a pristine state.
+         * 
+         * The purpose of this method is support unit testing.
+         * 
+         * @expose
+         */
+        zone.reset = function() {
+            ROOT = newRootModule();
+        };
+
+        /**
+         * Create a new zone in a pristine state.
+         * 
+         * @expose
+         * @return a new zone
+         */
+        zone.makeZone = function() {
+            return newZone();
+        };
+
+        /**
+         * Get the version of zone.
+         * 
+         * @expose
+         * @return {!string} the current version of zone
+         */
+        zone.version = function() {
+            return VERSION;
+        };
+
+        return zone;
     };
 
     /**
-     * Get a public value by its global name.
-     * 
-     * @expose
-     * @param {!string}
-     *            name the name of the object to get
-     * @return {*} an object
-     */
-    this.zone.get = function(name) {
-        checkArguments(arguments, 1, 1);
-
-        var path = new Path(name, ROOT);
-        if (path.module === null) {
-            throw new Error('Not found ' + name);
-        }
-        return path.module.get(path.local);
-    };
-
-    /**
-     * A function that can be used to complete reset the zone.
-     * 
      * @expose
      */
-    this.zone.reset = function() {
-        ROOT = new Module('', null, []);
-        MODULES = {};
-    };
-
-    /**
-     * Get the version of zone.
-     * 
-     * @expose
-     * @return {!string} the current version of zone
-     */
-    this.zone.version = function() {
-        return VERSION;
-    };
+    this.zone = newZone();
 
     return this.zone;
 }).call(this, console || {
