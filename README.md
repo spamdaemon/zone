@@ -358,8 +358,8 @@ Get the value associated with the full name of a bound value.
  
 ## zone.makeZone()
 
-Create a new empty zone. This function is primarily useful for unit testing or setting up a local
-zone that need be shared globally. 
+Create a new pristine zone. This function is primarily useful for unit testing or setting up a local
+zone that must not be shared globally. 
 ```js
   var zone2 = zone.makeZone();
   zone2("mine").value('foo','bar');
