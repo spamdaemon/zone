@@ -986,7 +986,7 @@
             };
         }
         if (!(typeof selector === 'function')) {
-            throw Error("Invalid interceptor " + interceptWhat);
+            throw Error("Invalid interceptor " + selector);
         }
 
         var args = Array.prototype.slice.call(arguments, 1);
@@ -1081,9 +1081,10 @@
         }
 
         var descriptor = createFunctionDescriptor(args);
-
+        var zm = this.zone;
+        
         return function() {
-            var m = zone(module, true);
+            var m = zm(module, true);
             var fn = m.inject(descriptor);
             return fn.apply(null, arguments);
         };
