@@ -418,6 +418,20 @@ describe("zone", function() {
         expect(fn()).toBe("bar");
     });
 
+    it("should implement static injection with bound this pointer", function() {
+        zone("mine").value("foo", "World!");
+
+        var THIS = "Hello, ";
+        
+        var fn = zone.inject("mine", [ "foo" ], function(x) {
+            return this+x;
+        });
+
+        var result = fn.apply(THIS,[]);
+        
+        expect(result).toBe("Hello, World!");
+    });
+
     it("should implement static injection into the root module", function() {
         zone().value("foo", "bar");
 
@@ -721,5 +735,14 @@ describe("zone", function() {
         };
 
         expect(fn).toThrow();
+    });
+    
+    it("should be able to delay binding for injections until invocation",function() {
+        var fn = zone.inject(['foo',function(x) {return x; }]);
+        zone().value("foo","bar");
+        expect(fn()).toBe('bar');
+        // clear out the zone, but note that the function is still bound
+        zone.reset();
+        expect(fn()).toBe('bar');
     });
 });

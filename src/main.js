@@ -1115,11 +1115,15 @@
             }
 
             var descriptor = createFunctionDescriptor(args);
-
+            
+            // cache the resolved value in the closure
+            var resolvedFN = null;
             return function() {
-                var m = getModule(ROOT, module, true);
-                var fn = m.inject(descriptor);
-                return fn.apply(this, arguments);
+                if (resolvedFN === null) {
+                    var m = getModule(ROOT, module, true);
+                    resolvedFN = m.inject(descriptor);
+                }
+                return resolvedFN.apply(this, arguments);
             };
         };
 
