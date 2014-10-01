@@ -1115,7 +1115,7 @@
             }
 
             var descriptor = createFunctionDescriptor(args);
-            
+
             // cache the resolved value in the closure
             var resolvedFN = null;
             return function() {

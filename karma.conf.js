@@ -5,13 +5,17 @@ module.exports = function(config) {
         basePath : '',
 
         // frameworks to use
-        frameworks : ['jasmine' ],
+        frameworks : [ 'jasmine' ],
 
         // list of files / patterns to load in the browser
         files : [
         // sources
-       // 'src/main.js',//
-        'zone.min.js',
+        'src/**/*.js',//
+        
+        // the zone and the modules
+        //'zone*.min.js',
+
+        'test/lib/**/*.js',//
         //
         // special tests
         'test/spec/**/*Test.js'//
@@ -25,7 +29,7 @@ module.exports = function(config) {
 
         // test results reporter to use
         // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
-        reporters : ['progress' ],
+        reporters : [ 'progress' ],
 
         // web server port
         port : 9876,
@@ -64,6 +68,6 @@ module.exports = function(config) {
         singleRun : false,
 
         // plugins to load
-        plugins : ['karma-jasmine', 'karma-chrome-launcher', 'karma-firefox-launcher', 'karma-html-reporter' ]
+        plugins : [ 'karma-jasmine', 'karma-chrome-launcher', 'karma-firefox-launcher', 'karma-html-reporter' ]
     });
 };
