@@ -68,9 +68,10 @@ API
 1. Optional Modules
   * [$console](#console)
   * [$document](#document)
-  * [$indexedDB](#indexedDB)
+  * [$indexedDB](#indexeddb)
   * [$window](#window)
-  * [$Worker](#Worker)
+  * [$Worker](#worker)
+  * [$XMLHttpRequest](#xmlhttprequest)
 
 # Core
 
@@ -417,3 +418,7 @@ This is a wrapper for the global window object.
 ## $Worker
 
 This is a wrapper for the window.Worker class.
+
+## $XMLHttpRequest
+
+This is a wrapper for the window.XMLHttpRequest class.

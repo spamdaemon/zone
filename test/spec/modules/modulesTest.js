@@ -18,8 +18,12 @@ describe("modules", function() {
     it("should define the document", function() {
         expect(BaseZone.get("$document")).toBe(window.document);
     });
-    
+
     it("should define the worker", function() {
         expect(BaseZone.get("$Worker")).toBe(window.Worker);
+    });
+
+    it("should define the XMLHttpRequest", function() {
+        expect(BaseZone.get("$XMLHttpRequest")).toBe(window.XMLHttpRequest);
     });
 });
