@@ -14,7 +14,6 @@ Zone provides the ability to
 * inject defined objects into functions
 * include or compile modules in an arbitrary order as long as zone.js is loaded first
 
-
 Unit Testing
 ------------
 
@@ -247,10 +246,10 @@ module.value("language",'de');
 Thus, ```zone.get('greeting.phrase')``` will now always yield "Hallo, Welt!" instead of the default "Hello, World!".
 
 
-Interceptors can also take a ```function(moduleName,localName)``` as the first parameter to provide a more generic mechanism for intercepting values. For example, using this interceptor, name resolutions can be logged:
+Interceptors can also take a ```function(moduleName,localName)``` as the first parameter to provide a more generic mechanism for intercepting values. For example, using this interceptor, name resolutions can be logged for any value in the module:
 ```js
-zone().interceptor(function() {
-	return true;
+zone().interceptor(function(mod,name) {
+	return mod === 'FOO';
 }, function() {
     return function(v, m, l) {
        console.log("Trace: "+m+", "+l+" : "+JSON.stringify(v));
