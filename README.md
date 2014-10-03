@@ -2,7 +2,7 @@ Zone API
 ========
 
 This library provides a way to organize code in modules with automatic dependency management. Another feature is dependency injection for singleton objects and services.
-This is small library is basically inspired by angularjs.
+This is small library is basically inspired by [AngularJS](https://angularjs.org/).
 
 
 Features
@@ -12,12 +12,13 @@ Zone provides the ability to
 * define modules hierarchically
 * define public, protected, and private objects
 * inject defined objects into functions
+* include or compile modules in an arbitrary order as long as zone.js is loaded first
 
 
 Unit Testing
 ------------
 
-Unit testing is supported by [Jasmine](http://pivotal.github.io/jasmine/)
+Unit testing is done with [Jasmine](http://pivotal.github.io/jasmine/)
 and [Karma](http://karma-runner.github.io/).
 
 
@@ -64,6 +65,12 @@ API
   * [zone.reset()](#zonereset)
   * [zone.version()](#zoneversion)
 
+1. Optional Modules
+  * [$console](#$console)
+  * [$document](#$document)
+  * [$indexedDB](#$indexedDB)
+  * [$window](#$window)
+  * [$Worker](#$Worker)
 
 # Core
 
@@ -373,3 +380,40 @@ unit testing, when setting up a test. This function returns no value.
 ## zone.version()
 
 Returns a string for the current version of zone.
+
+
+# Optional Modules
+
+Several optional factories, services, and values are provided that wrap their native components. These 
+definitions do not really add any value beyond the ability to inject them and possibly intercept them.
+
+All these values are defined at the top-level zone, e.g.
+```js
+ var console = zone.get("$console");
+```
+
+
+NOTE: these modules are lost when a zone is reset, or when a new zone is created.
+
+## $console
+
+This is a wrapper for window.console and is modified to make it work across browsers.
+
+
+## $document
+
+This is a wrapper for   window.document.
+
+
+## $indexedDB
+
+This is a wrapper for window.indexedDB.
+
+## $window
+
+
+This is a wrapper for the global window object.
+
+## $Worker
+
+This is a wrapper for the window.Worker class.
