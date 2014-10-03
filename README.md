@@ -41,7 +41,7 @@ API
     * [Module.create(name)](#modulecreatename)
     * [Module.configure(imports)](#moduleconfigureimports)
     
-  1. Define Objects
+  1. Define Values
     * [Module.factory(name,function)](#modulefactorynamefunction)
     * [Module.service(name,constructor)](#moduleservicenameconstructor)
     * [Module.value(name,value)](#modulevaluenamevalue)
@@ -156,7 +156,7 @@ var child = zone("child").configure(["sibling"]);
 
 A module can only be configured once and only if the module has not been used for lookups yet.
 
-## Defining Values and Object in a Module
+## Define Values
 
 A module allows the binding of four types of values to a name:
  * factory: functions that return the value to be bound
