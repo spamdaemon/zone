@@ -66,11 +66,11 @@ API
   * [zone.version()](#zoneversion)
 
 1. Optional Modules
-  * [$console](#$console)
-  * [$document](#$document)
-  * [$indexedDB](#$indexedDB)
-  * [$window](#$window)
-  * [$Worker](#$Worker)
+  * [$console](#console)
+  * [$document](#document)
+  * [$indexedDB](#indexedDB)
+  * [$window](#window)
+  * [$Worker](#Worker)
 
 # Core
 
