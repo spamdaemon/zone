@@ -1017,8 +1017,8 @@
                 return module.__fullName === m && l === path.local;
             };
         }
-        if (!(typeof selector === 'function')) {
-            throw Error("Invalid interceptor " + selector);
+        if (typeof selector !== 'function') {
+            throw new Error("Invalid interceptor " + selector);
         }
 
         var args = Array.prototype.slice.call(arguments, 1);
@@ -1049,7 +1049,7 @@
         var zone = function(opt_path, opt_preventImplicitModule) {
             // do not call
             return getModule(ROOT, opt_path, opt_preventImplicitModule);
-        }
+        };
 
         /**
          * Create a function descriptor. This value may be passed to any of the define functions or the inject function.
