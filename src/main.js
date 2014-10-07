@@ -144,7 +144,8 @@
     };
 
     /**
-     * Parse the formal parameters of a function. TODO: use AngularJS function here instead
+     * Parse the formal parameters of a function.<br>
+     * TODO: use AngularJS function here instead
      * 
      * @param {function(...[*])}
      *            f a function taking an variable number of parameters
@@ -502,7 +503,8 @@
      *            descriptor a function or value descriptor
      */
     var Resolvable = function(module, name, access, descriptor) {
-
+        this.hasValue = false;
+        this.value = null;
         this.module = module;
         this.name = name;
         this.fullName = makeFullName(module.__fullName, name);
@@ -752,15 +754,15 @@
      * 
      * @param {!Resolvable}
      *            R the resolve to be instantiated
-     * @return {Object} a value for the resolvable
+     * @return {*} a value for the resolvable
      * @throws Error
      *             if a cyclic dependency was detected
      */
     var resolveValue = function(R) {
         var fn, interceptors, interceptor, interceptFN, value, i, n;
 
-        if (R.hasOwnProperty('value')) {
-            return R['value'];
+        if (R.hasValue) {
+            return R.value;
         }
 
         if (R.resolving === true) {
@@ -813,11 +815,12 @@
             }
         }
 
-        R['value'] = value;
+        R.value = value;
+        R.hasValue = true;
         // the descriptor isn't needed anymore, so clean up
         delete R.descriptor;
 
-        return R['value'];
+        return value;
     };
 
     /**
