@@ -1,7 +1,6 @@
 describe("zone", function() {
     "use strict"
 
-    
     beforeEach(function() {
         zone.reset();
     });
@@ -423,13 +422,13 @@ describe("zone", function() {
         zone("mine").value("foo", "World!");
 
         var THIS = "Hello, ";
-        
+
         var fn = zone.inject("mine", [ "foo" ], function(x) {
-            return this+x;
+            return this + x;
         });
 
-        var result = fn.apply(THIS,[]);
-        
+        var result = fn.apply(THIS, []);
+
         expect(result).toBe("Hello, World!");
     });
 
@@ -737,13 +736,31 @@ describe("zone", function() {
 
         expect(fn).toThrow();
     });
-    
-    it("should be able to delay binding for injections until invocation",function() {
-        var fn = zone.inject(['foo',function(x) {return x; }]);
-        zone().value("foo","bar");
+
+    it("should be able to delay binding for injections until invocation", function() {
+        var fn = zone.inject([ 'foo', function(x) {
+            return x;
+        } ]);
+        zone().value("foo", "bar");
         expect(fn()).toBe('bar');
         // clear out the zone, but note that the function is still bound
         zone.reset();
         expect(fn()).toBe('bar');
+    });
+
+    it("should be able to bind an object its fullname", function() {
+        zone.factory("+org.example.factory", function() {
+            return 'Factory';
+        });
+        zone.service("+org.example.service", function() {
+            this.get = 'Service';
+        });
+        zone.value("+org.example.value", 'Value');
+        zone.constant("+org.example.constant", 'Constant');
+
+        expect(zone.get("org.example.factory")).toBe('Factory');
+        expect(zone.get("org.example.service").get).toBe('Service');
+        expect(zone.get("org.example.value")).toBe('Value');
+        expect(zone.get("org.example.constant")).toBe('Constant');
     });
 });

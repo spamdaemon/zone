@@ -60,6 +60,10 @@ API
   * [zone.inject(function)](#zoneinjectfunction)
   * [zone.inject(modulePath,function)](#zoneinjectmodulepathfunction)
   * [zone.get(fullname)](#zonegetfullname)
+  * [zone.factory(name,function)](#zonefactorynamefunction)
+  * [zone.service(name,constructor)](#zoneservicenameconstructor)
+  * [zone.value(name,value)](#zonevaluenamevalue)
+  * [zone.constant(name,value)](#zoneconstantnamevalue) 
   * [zone.makeZone()](#zonemakezone)
   * [zone.reset()](#zonereset)
   * [zone.version()](#zoneversion)
@@ -367,6 +371,44 @@ Get the value associated with the full name of a bound value.
   zone.get('child.value') === zone('child').get('value')
   zone.get('value') === zone().get('value')
 ```
+
+## zone.factory(name,function)
+
+Define a factory by its fullname. The following statements are equivalent:
+```js
+  zone.factory('#org.example.foo', function() { return x; });
+  zone('org.example').factory('#foo', function() { return x; });
+```
+
+## zone.service(name,constructor)
+
+Define a service by its fullname. The following statements are equivalent:
+```js
+  zone.service('#org.example.foo', function() { this.value = 3.1415; });
+  zone('org.example').service('#foo', function() { this.value = 3.1415; });
+```
+The return value of this function is the zone object itself.
+
+
+## zone.value(name,value)
+
+Define a value by its fullname. The following statements are equivalent:
+```js
+  zone.value('#org.example.foo', 3.1415);
+  zone('org.example').value('#foo', 3.1415);
+```
+The return value of this function is the zone object itself.
+
+
+## zone.constant(name,value)
+
+Define a constant by its fullname. The following statements are equivalent:
+```js
+  zone.constant('#org.example.foo', 3.1415);
+  zone('org.example').constant('#foo', 3.1415);
+```
+The return value of this function is the zone object itself.
+
  
 ## zone.makeZone()
 
@@ -376,6 +418,8 @@ zone that must not be shared globally.
   var zone2 = zone.makeZone();
   zone2("mine").value('foo','bar');
 ```
+The return value of this function is the zone object itself.
+
 
 ## zone.reset()
 

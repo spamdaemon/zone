@@ -32,18 +32,22 @@
         case '-':
             result.access = PRIVATE_ACCESS;
             result.name = name.substr(1);
+            result.prefix = '-';
             break;
         case '+':
             result.access = PUBLIC_ACCESS;
             result.name = name.substr(1);
+            result.prefix = '';
             break;
         case '#':
             result.access = PROTECTED_ACCESS;
             result.name = name.substr(1);
+            result.prefix = '#';
             break;
         default:
             result.access = PUBLIC_ACCESS;
             result.name = name;
+            result.prefix = '';
         }
         return result;
     };
@@ -583,8 +587,8 @@
         i = path.lastIndexOf('.');
         if (i >= 0) {
             this.modulePath = path.substring(0, i);
-            this.module = findModule(root, this.modulePath, false);
             this.local = path.substr(i + 1);
+            this.module = findModule(root, this.modulePath, false);
         }
     };
 
@@ -1146,6 +1150,92 @@
                 throw new Error('Not found ' + name);
             }
             return path.module.get(path.local);
+        };
+
+        /**
+         * Define a factory object. The name starts with modifier characters, such as, '#', '+', '-' then the value will
+         * accessible as protected, public, or private respectively. If no access modier is provided, then access
+         * default to public access.
+         * 
+         * @expose
+         * @param {!string}
+         *            name the full name of the object to be bound
+         * @param {...*}
+         *            var_args
+         * @return {!*} the zone instance
+         */
+        zone.factory = function(name, var_args) {
+            var pname = parseName(name);
+            var path = new Path(ROOT, pname.name, ROOT);
+            var m = getModule(ROOT, path.modulePath);
+            var args = Array.prototype.slice.call(arguments);
+            args[0] = pname.prefix + path.local;
+            Module.prototype.factory.apply(m, args);
+            return zone;
+        };
+
+        /**
+         * Define a service. The name starts with modifier characters, such as, '#', '+', '-' then the value will
+         * accessible as protected, public, or private respectively. If no access modier is provided, then access
+         * default to public access.
+         * 
+         * @expose
+         * @param {!string}
+         *            name the full name of the object to be bound
+         * @param {...*}
+         *            var_args
+         * @return {!*} the zone instance
+         */
+        zone.service = function(name, var_args) {
+            var pname = parseName(name);
+            var path = new Path(ROOT, pname.name, ROOT);
+            var m = getModule(ROOT, path.modulePath);
+            var args = Array.prototype.slice.call(arguments);
+            args[0] = pname.prefix + path.local;
+            Module.prototype.service.apply(m, args);
+            return zone;
+        };
+
+        /**
+         * Define a value. The name starts with modifier characters, such as, '#', '+', '-' then the value will
+         * accessible as protected, public, or private respectively. If no access modier is provided, then access
+         * default to public access.
+         * 
+         * @expose
+         * @param {!string}
+         *            name the full name of the object to be bound
+         * @param {*}
+         *            value a value
+         * @return {!*} the zone instance
+         */
+        zone.value = function(name, value) {
+            var pname = parseName(name);
+            var path = new Path(ROOT, pname.name, ROOT);
+            var m = getModule(ROOT, path.modulePath);
+            m.value(pname.prefix + path.local, value);
+            return zone;
+        };
+
+        /**
+         * Define a constant value. The name starts with modifier characters, such as, '#', '+', '-' then the value will
+         * accessible as protected, public, or private respectively. If no access modier is provided, then access
+         * default to public access.
+         * <p>
+         * This method will freeze and seal the provided constant value.
+         * 
+         * @expose
+         * @param {!string}
+         *            name the full name of the object to be bound
+         * @param {*}
+         *            value a value
+         * @return {!*} the zone instance
+         */
+        zone.constant = function(name, value) {
+            var pname = parseName(name);
+            var path = new Path(ROOT, pname.name, ROOT);
+            var m = getModule(ROOT, path.modulePath);
+            m.constant(pname.prefix + path.local, value);
+            return zone;
         };
 
         /**
