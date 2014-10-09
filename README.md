@@ -187,6 +187,7 @@ Bind a factory function to a name within the given module. The factory function 
  zone().factory("foo",function() { 
     return "The Bound Value";
  });
+ expect(zone.get("foo")).toBe("The Bound Value");
 ```
    
 ### Module.service(name,constructor)
@@ -194,9 +195,11 @@ Bind a constructor function to the given name in the module. The constructor is 
   
 ```js
  // inject bar into the service
+ zone().value("bar","bar");
  zone().service("foo",['bar'], function(b) { 
     this.get = function() { return b; };
  });
+ expect(zone.get("foo").get()).toBe("bar");
 ```
 
 ### Module.value(name,value)
@@ -204,6 +207,7 @@ Bind a value to a name in the module.
 
 ```js
  zone().value("foo",{ name : "FOO"});
+ expect(zone.get("foo").name).toBe("FOO");
 ```
 
 ### Module.constant(name,value)
@@ -212,6 +216,7 @@ and sealed and can thus not be modified in any way.
 
 ```js
  zone().constant("Owner",{ name : "John Doe"});
+ expect(zone.get("Owner").name).toBe("John Doe");
 ```
 
 
