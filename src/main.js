@@ -1,8 +1,12 @@
 /**
  * A private object that maintains and creates modules.
  * 
+ * @param console
+ *            the console object to use
+ * @param {...}
+ *            undefined the undefined value (works even if someone redefined it)
  */
-(function(console) {
+(function(console, undefined) {
     'use strict';
 
     if (this.zone) {
