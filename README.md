@@ -152,7 +152,8 @@ var child = zone("child");
 
 ### Module.configure(imports)
 
-Modules can import other modules which affects the lookup of objects by a simple name. 
+Modules can import other modules which affects the lookup of objects by a simple name. The following example,
+makes all publicly defined objects of 'sibling' available in 'child':
 
 ```js
 var child = zone("child").configure(["sibling"]);

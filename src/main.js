@@ -605,11 +605,13 @@
      *            start the module in which to start searching
      * @param {number}
      *            access the type access granted to the module's resolvables
+     * @param {!boolean}
+     *            recurse allow recursion
      * @param {!Object}
      *            recursionGuard the recursion guard is necessary to detect cyclic dependencies
      * @return {?Resolvable} a resolvable object or null if not found
      */
-    var findResolvable = function(name, start, access, recursionGuard) {
+    var findResolvable = function(name, start, access, recurse, recursionGuard) {
         var i, n, local, depends;
         var current, resolvable, imports;
         var path = new Path(start.__root, name, start);
@@ -635,7 +637,11 @@
             }
             resolvable = null;
 
-            // finish the loop if we've found a locally define object
+            if (!recurse) {
+                break;
+            }
+
+            // finish the loop if we've found a locally defined object
             if (!resolvable) {
                 // not found
                 if (recursionGuard[current.__fullName] === true) {
@@ -656,7 +662,8 @@
                         if (depends === null) {
                             throw new Error('Invalid dependency : ' + imports[i]);
                         }
-                        resolvable = findResolvable(local, depends, PUBLIC_ACCESS, recursionGuard);
+                        // do not search recursively
+                        resolvable = findResolvable(local, depends, PUBLIC_ACCESS, false, recursionGuard);
                     }
                 } finally {
                     recursionGuard[current.__fullName] = false;
@@ -716,7 +723,7 @@
                     name = name.substr(1);
                 }
                 // we can use PRIVATE access, since we're resolving locally
-                r = findResolvable(name, module, access, {});
+                r = findResolvable(name, module, access, true, {});
 
                 if (r) {
                     try {
@@ -899,7 +906,7 @@
      *             if the value could not be created
      */
     Module.prototype.get = function(name) {
-        var R = findResolvable(name, this, PUBLIC_ACCESS, {});
+        var R = findResolvable(name, this, PUBLIC_ACCESS, true, {});
         if (R) {
             return resolveValue(R);
         }

@@ -333,6 +333,36 @@ describe("zone", function() {
         expect(fn).toThrow();
     });
 
+    it("should should find direct imports", function() {
+        zone("a").value("foo", "bar");
+        zone("b").configure([ 'a' ]);
+
+        expect(zone.get("b.foo")).toBe('bar');
+    });
+
+    it("should use only direct imports (no recursion)", function() {
+        zone("a").value("foo", "bar");
+        zone("b").configure([ 'a' ]);
+        zone("c").configure([ 'b' ]);
+
+        zone.get("b.foo");
+        
+        var fn = function() {
+            zone.get("c.foo");
+        };
+        expect(fn).toThrow();
+    });
+
+    it("should use only direct imports (no recursion)", function() {
+        zone("right").value("foo", "bar");
+        zone("left").configure([ 'right.rightChild' ]);
+        zone("right.rightChild");
+        var fn = function() {
+            zone.get("left.foo");
+        };
+        expect(fn).toThrow();
+    });
+
     it("should bind 'this' to the null in factory functions", function() {
         var m = zone("mine");
         m.factory("foo", function() {
