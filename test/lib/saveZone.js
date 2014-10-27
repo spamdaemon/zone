@@ -1,10 +1,9 @@
-
 /**
  * Save the original zone, because it is the one that has the modules saved.
  */
 SavedZone = zone.copyZone();
 
 /**
- * Create an empty zone/
+ * Create an new empty zone.
  */
-zone.reset();
+zone = zone.makeZone();

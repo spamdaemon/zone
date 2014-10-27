@@ -22,9 +22,9 @@ zone().factory(
             var methods = ('assert,clear,count,debug,dir,dirxml,error,exception,group,'
                     + 'groupCollapsed,groupEnd,info,log,markTimeline,profile,profiles,profileEnd,'
                     + 'show,table,time,timeEnd,timeline,timelineEnd,timeStamp,trace,warn').split(',');
-            while (prop = properties.pop())
+            while ((prop = properties.pop()))
                 con[prop] = con[prop] || empty;
-            while (method = methods.pop())
+            while ((method = methods.pop()))
                 con[method] = con[method] || dummy;
 
             return con;

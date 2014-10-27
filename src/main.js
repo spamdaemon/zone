@@ -1289,17 +1289,6 @@
         };
 
         /**
-         * Reset this zone to a pristine state.
-         * 
-         * The purpose of this method is support unit testing.
-         * 
-         * @expose
-         */
-        zone.reset = function() {
-            ROOT = newRootModule();
-        };
-
-        /**
          * Create a new zone in a pristine state.
          * 
          * @expose

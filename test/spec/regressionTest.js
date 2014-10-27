@@ -3,7 +3,7 @@ describe("tests that reproduce bugs", function() {
     "use strict";
     
     beforeEach(function() {
-        zone.reset();
+       zone = zone.makeZone();
     });
 
     it("should not detect a cyclic dependency when looking up optional value through a sibling", function() {

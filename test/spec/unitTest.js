@@ -1,12 +1,21 @@
 describe("zone for unit testing", function() {
     "use strict";
 
+    //the inject function uses late-binding to the current in-scope zone object.
+    var inject = function() {
+        var args = arguments;
+        return function() {
+            return zone.inject.apply(null,args)();
+        };
+    };
+
+
     beforeEach(function() {
-        zone.reset();
+        zone = zone.makeZone();
         zone("mine").value("foo", "bar");
     });
 
-    it("should support injection when unit testing", zone.inject("mine", [ "foo" ], function(foo) {
+    it("should support injection when unit testing", inject("mine", [ "foo" ], function(foo) {
         expect(foo).toBe("bar");
     }));
 

@@ -66,7 +66,6 @@ API
   * [zone.constant(name,value)](#zoneconstantnamevalue) 
   * [zone.makeZone()](#zonemakezone)
   * [zone.copyZone()](#zonecopyzone)
-  * [zone.reset()](#zonereset)
   * [zone.version()](#zoneversion)
 
 1. Optional Modules
@@ -434,11 +433,6 @@ Create a copy of the zone. Any values, services, interceptors, etc. that have be
 ```
 The return value of this function is the new zone object itself.
 
-
-## zone.reset()
-
-Reset this zone to a pristine state. This method is probably only usful during
-unit testing, when setting up a test. This function returns no value.
 
 ## zone.version()
 

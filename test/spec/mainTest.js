@@ -2,7 +2,7 @@ describe("zone", function() {
     "use strict";
 
     beforeEach(function() {
-        zone.reset();
+        zone = zone.makeZone();
     });
 
     it("should have a root module", function() {
@@ -380,7 +380,7 @@ describe("zone", function() {
             THIS = this;
             this.get = function() {
                 return this;
-            }
+            };
         });
 
         var srv = m.get("foo");
@@ -700,7 +700,6 @@ describe("zone", function() {
         });
 
         zone("base.derived").factory("bar", [ "foo" ], function(fooFactory) {
-            "use strict";
             return fooFactory;
         });
 
@@ -796,9 +795,6 @@ describe("zone", function() {
             return x;
         } ]);
         zone().value("foo", "bar");
-        expect(fn()).toBe('bar');
-        // clear out the zone, but note that the function is still bound
-        zone.reset();
         expect(fn()).toBe('bar');
     });
 
