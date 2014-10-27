@@ -65,6 +65,7 @@ API
   * [zone.value(name,value)](#zonevaluenamevalue)
   * [zone.constant(name,value)](#zoneconstantnamevalue) 
   * [zone.makeZone()](#zonemakezone)
+  * [zone.copyZone()](#zonecopyzone)
   * [zone.reset()](#zonereset)
   * [zone.version()](#zoneversion)
 
@@ -419,7 +420,19 @@ zone that must not be shared globally.
   var zone2 = zone.makeZone();
   zone2("mine").value('foo','bar');
 ```
-The return value of this function is the zone object itself.
+The return value of this function is the new zone object itself.
+
+
+## zone.copyZone()
+
+Create a copy of the zone. Any values, services, interceptors, etc. that have been registered with the original zone are copied into the new zone. However, any values that may have been already created are not copied and so all values are subject to re-creation in the new zone. 
+
+```js
+  zone('').value('foo','bar');
+  var zone2 = zone.copyZone();
+  expect(zone2.get('foo')).toBe('bar')
+```
+The return value of this function is the new zone object itself.
 
 
 ## zone.reset()

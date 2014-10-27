@@ -1,5 +1,7 @@
 describe("tests that reproduce bugs", function() {
 
+    "use strict";
+    
     beforeEach(function() {
         zone.reset();
     });

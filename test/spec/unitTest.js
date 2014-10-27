@@ -1,4 +1,5 @@
 describe("zone for unit testing", function() {
+    "use strict";
 
     beforeEach(function() {
         zone.reset();
@@ -33,7 +34,7 @@ describe("zone for unit testing", function() {
         zone("child").value("foo", 1);
         zone("child").value("bar", 2);
         var g = function(a, b, x, y) {
-            return [ a, b, x, y ]
+            return [ a, b, x, y ];
         };
         var fn = zone("child").inject([ 'foo', 'bar', '#x', '#y', g ]);
         var z = fn(3, 4);

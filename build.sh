@@ -5,7 +5,7 @@ COMPILER_JAR=${CLOSURE_PATH}/compiler.jar
 
 PWD=`pwd`;
 PROJECT_NAME=`basename $PWD`;
-MODULES_NAME=${PROJECT_NAME}-modules;
+MODULES_NAME=${PROJECT_NAME}.modules;
 
 MODULE_SOURCES=`find src/modules -name \*.js`
 SOURCES="src/main.js ${SOURCES}"

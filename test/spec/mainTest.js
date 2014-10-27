@@ -1,5 +1,5 @@
 describe("zone", function() {
-    "use strict"
+    "use strict";
 
     beforeEach(function() {
         zone.reset();
@@ -346,7 +346,7 @@ describe("zone", function() {
         zone("c").configure([ 'b' ]);
 
         zone.get("b.foo");
-        
+
         var fn = function() {
             zone.get("c.foo");
         };
@@ -765,6 +765,30 @@ describe("zone", function() {
         };
 
         expect(fn).toThrow();
+    });
+
+    it("Make a simple recursive copy of the zone", function() {
+        zone("a.b.c").value("foo", "bar");
+        var zone2 = zone.copyZone();
+        expect(zone2.get("a.b.c.foo")).toBe('bar');
+    });
+
+    it("Make a simple recursive copy of the zone and test interceptors", function() {
+        zone("a.b.c").value("foo", "bar");
+        var cnt = 0;
+        // use side-effect in the interceptor to verify that we properly re-apply them
+        // when copying a zone
+        zone("a.b.c").interceptor("foo", function() {
+            return function() {
+                return cnt++;
+            };
+        });
+        expect(zone.get("a.b.c.foo")).toBe(0);
+        expect(zone.get("a.b.c.foo")).toBe(0);
+
+        var zone2 = zone.copyZone();
+        expect(zone2.get("a.b.c.foo")).toBe(1);
+        expect(zone2.get("a.b.c.foo")).toBe(1);
     });
 
     it("should be able to delay binding for injections until invocation", function() {

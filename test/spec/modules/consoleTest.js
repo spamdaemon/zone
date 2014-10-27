@@ -2,11 +2,10 @@
  * 
  */
 describe("console", function() {
-    "use strict"
+    "use strict";
 
-    
     it("it should define a global console", function() {
-        var fn = BaseZone.inject([ '$console' ], function(con) {
+        var fn = SavedZone.inject([ '$console' ], function(con) {
             con.log("Hello, World!");
             return con;
         });

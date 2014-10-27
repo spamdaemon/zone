@@ -2,9 +2,9 @@
 /**
  * Save the original zone, because it is the one that has the modules saved.
  */
-BaseZone = zone;
+SavedZone = zone.copyZone();
 
 /**
- * Make a new zone, which will be used from now on
+ * Create an empty zone/
  */
-zone = BaseZone.makeZone();
+zone.reset();

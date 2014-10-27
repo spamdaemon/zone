@@ -224,10 +224,37 @@
             this.__interceptors = [];
             this.__root = this;
             this.__modules = {};
-
         }
         // register this module with the root module
         this.__root.__modules[this.__fullName] = this;
+    };
+
+    /**
+     * Copy a module as is. Any resolved values are not copied, but their unresolved specs are copied.
+     * 
+     * @param {!Module}
+     *            module a module
+     * @param {Module}
+     *            parent the new parent
+     * @return {!Module} a recursive copy of the specified module
+     */
+    var copyModule = function(name, module, parent) {
+        var newModule = new Module(name, parent, null);
+        if (module.__imports) {
+            newModule.__imports = module.__imports.slice();
+        }
+        var child, mod;
+        if (newModule.__root === newModule) {
+            newModule.__interceptors = module.__interceptors.slice();
+        }
+        for (mod in module.__values) {
+            newModule.__values[mod] = module.__values[mod].copy(newModule);
+        }
+        // recursively copy the children
+        for (child in module.__children) {
+            copyModule(child, module.__children[child], newModule);
+        }
+        return newModule;
     };
 
     /**
@@ -401,15 +428,16 @@
      * 
      * @constructor
      * @final
-     * @param {!Module}
-     *            module the module in which the interceptor will resolve
+     * @param {!string}
+     *            name the module in which the interceptor will resolve
      * @param {!function(!string,!string):boolean}
      *            selector a boolean function taking two string arguments
      * @param {!FunctionDescriptor}
      *            descriptor the function used to create the interceptor
      */
-    var Interceptor = function(module, selector, descriptor) {
-        this.module = module;
+    var Interceptor = function(name, selector, descriptor) {
+        // only use the full module name, because then we can use
+        this.name = name;
         this.selector = selector;
         this.descriptor = descriptor;
     };
@@ -528,6 +556,17 @@
         default:
             throw new Error('Invalid access ' + access);
         }
+    };
+
+    /**
+     * Clone this resolvable.
+     * 
+     * @param {!Module}
+     *            newModule the target module into which the resolvable will be installed
+     * @return {!Resolvable} the resolvable
+     */
+    Resolvable.prototype.copy = function(newModule) {
+        return new Resolvable(newModule, this.name, this.access, this.descriptor);
     };
 
     /**
@@ -774,7 +813,7 @@
      *             if a cyclic dependency was detected
      */
     var resolveValue = function(R) {
-        var fn, interceptors, interceptor, interceptFN, value, i, n;
+        var fn, interceptors, module, interceptor, interceptFN, value, i, n;
 
         if (R.hasValue) {
             return R.value;
@@ -811,14 +850,15 @@
             }
         }
 
-        interceptors = R.module.__root.__interceptors || [];
+        interceptors = R.module.__root.__interceptors;
 
         // apply all interceptors, which is in arbitrary order
         for (i = 0, n = interceptors.length; i < n; ++i) {
             interceptor = interceptors[i];
             if (interceptor.selector(R.module.__fullName, R.name)) {
                 try {
-                    interceptFN = injectFunction(interceptor.module, PRIVATE_ACCESS, interceptor.descriptor, false, true);
+                    module = getModule(R.module.__root, interceptor.name, true);
+                    interceptFN = injectFunction(module, PRIVATE_ACCESS, interceptor.descriptor, false, true);
                 } catch (error) {
                     console.log('Interceptor for ' + R.fullName + ' failed');
                     throw error;
@@ -832,8 +872,6 @@
 
         R.value = value;
         R.hasValue = true;
-        // the descriptor isn't needed anymore, so clean up
-        delete R.descriptor;
 
         return value;
     };
@@ -1043,16 +1081,17 @@
         var descriptor = createFunctionDescriptor(args);
         descriptor.validateInjectionParameterNames("?", "#");
         // register the interceptor with the root module
-        this.__root.__interceptors.push(new Interceptor(this, selector, descriptor));
+        this.__root.__interceptors.push(new Interceptor(this.__fullName, selector, descriptor));
         return this;
     };
 
-    var newZone = function() {
-
-        /**
-         * @type {!Module}
-         */
-        var ROOT = newRootModule();
+    /**
+     * Create a new zone.
+     * 
+     * @param {!Module}
+     *            ROOT the root module
+     */
+    var newZone = function(ROOT) {
 
         /**
          * Find a module. If no module is specified, then returns the root module.
@@ -1267,7 +1306,18 @@
          * @return a new zone
          */
         zone.makeZone = function() {
-            return newZone();
+            return newZone(newRootModule());
+        };
+
+        /**
+         * Create a copy of this zone before before anything had been resolved. This method is very useful for testing
+         * and mocking up services.
+         * 
+         * @expose
+         * @return a new zone that has copied all interceptors and descriptors.
+         */
+        zone.copyZone = function() {
+            return newZone(copyModule('', ROOT, null));
         };
 
         /**
@@ -1286,7 +1336,7 @@
     /**
      * @expose
      */
-    this.zone = newZone();
+    this.zone = newZone(newRootModule());
 
     return this.zone;
 }).call(this, console || {
