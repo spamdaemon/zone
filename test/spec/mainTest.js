@@ -813,4 +813,37 @@ describe("zone", function() {
         expect(zone.get("org.example.value")).toBe('Value');
         expect(zone.get("org.example.constant")).toBe('Constant');
     });
+
+    it("should enumerate the names", function() {
+        zone("a.b.c").value("foo", 'bar');
+        zone("x.y.z").value("foo", 'bar');
+        zone("a.b").value("-foo", 'bar');
+
+        var names = zone.names();
+        expect(names.length).toBe(2);
+        expect(names).toContain('a.b.c.foo');
+        expect(names).toContain('x.y.z.foo');
+    });
+
+    it("should enumerate the names with a regexp filter", function() {
+        zone("a.b.c").value("foo", 'bar');
+        zone("x.y.z").value("foo", 'bar');
+        zone("a.b").value("-foo", 'bar');
+
+        var names = zone.names(/^.*b.*$/);
+        expect(names.length).toBe(1);
+        expect(names).toContain('a.b.c.foo');
+    });
+
+    it("should enumerate the names with a filter function", function() {
+        zone("a.b.c").value("foo", 'bar');
+        zone("x.y.z").value("foo", 'bar');
+        zone("a.b").value("#foo", 'bar');
+
+        var names = zone.names(function(x) {
+            return x.indexOf('y.') > 0;
+        });
+        expect(names.length).toBe(1);
+        expect(names).toContain('x.y.z.foo');
+    });
 });

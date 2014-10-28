@@ -1310,6 +1310,40 @@
         };
 
         /**
+         * Get the names of object.
+         * 
+         * @expose
+         * @param {...}
+         *            var_args an optional filter function or regexp
+         * @return the names of publicly accessible objects.
+         */
+        zone.names = function(var_args) {
+            var filter, i, n, root, name, value, result = [], resolvable;
+            if (typeof var_args === 'function') {
+                filter = var_args;
+            } else if (var_args instanceof RegExp) {
+                filter = function(x) {
+                    return var_args.test(x);
+                };
+            } else {
+                filter = function() {
+                    return true;
+                };
+            }
+            for (name in ROOT.__modules) {
+                for (value in ROOT.__modules[name].__values) {
+                    resolvable = ROOT.__modules[name].__values[value];
+                    if (resolvable.access === PUBLIC_ACCESS && filter(resolvable.fullName)) {
+                        result.push(resolvable.fullName);
+                        console.log("Resolvable " +resolvable.fullName+", "+resolvable.access);
+                    }
+                }
+            }
+            result.sort();
+            return result;
+        };
+
+        /**
          * Get the version of zone.
          * 
          * @expose

@@ -66,6 +66,7 @@ API
   * [zone.constant(name,value)](#zoneconstantnamevalue) 
   * [zone.makeZone()](#zonemakezone)
   * [zone.copyZone()](#zonecopyzone)
+  * [zone.names()](#zonenames)
   * [zone.version()](#zoneversion)
 
 1. Optional Modules
@@ -427,11 +428,22 @@ The return value of this function is the new zone object itself.
 Create a copy of the zone. Any values, services, interceptors, etc. that have been registered with the original zone are copied into the new zone. However, any values that may have been already created are not copied and so all values are subject to re-creation in the new zone. 
 
 ```js
-  zone('').value('foo','bar');
+  zone().value('foo','bar');
   var zone2 = zone.copyZone();
-  expect(zone2.get('foo')).toBe('bar')
+  expect(zone2.get('foo')).toBe('bar');
 ```
 The return value of this function is the new zone object itself.
+
+## zone.names()
+
+Get the names of all publicly accessible values. An optional filter or regular expression
+can be used to filter the names.
+
+```js
+  zone("a.b.c").value('foo','bar');
+  var names = zone.names();
+  expect(names[0]).toBe('a.b.c.foo');
+```
 
 
 ## zone.version()
