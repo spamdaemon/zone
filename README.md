@@ -73,6 +73,7 @@ API
   * [$console](#console)
   * [$document](#document)
   * [$indexedDB](#indexeddb)
+  * [$Math](#math)
   * [$window](#window)
   * [$Worker](#worker)
   * [$XMLHttpRequest](#xmlhttprequest)
@@ -477,6 +478,10 @@ This is a wrapper for   window.document.
 ## $indexedDB
 
 This is a wrapper for window.indexedDB.
+
+## $Math
+
+This is a wrapper for   window.Math.
 
 ## $window
 

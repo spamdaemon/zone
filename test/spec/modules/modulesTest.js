@@ -4,19 +4,24 @@
 describe("modules", function() {
     "use strict";
 
-    it("should define the window", function() {
-        expect(SavedZone.get("$window")).toBe(window);
-    });
-
-    it("should define the indexeddb", function() {
-        expect(SavedZone.get("$indexedDB")).toBe(window.indexedDB);
-    });
     it("should define the console", function() {
         expect(SavedZone.get("$console")).toBe(window.console);
     });
 
     it("should define the document", function() {
         expect(SavedZone.get("$document")).toBe(window.document);
+    });
+
+    it("should define the indexeddb", function() {
+        expect(SavedZone.get("$indexedDB")).toBe(window.indexedDB);
+    });
+
+    it("should define the Math", function() {
+        expect(SavedZone.get("$Math")).toBe(window.Math);
+    });
+
+    it("should define the window", function() {
+        expect(SavedZone.get("$window")).toBe(window);
     });
 
     it("should define the worker", function() {
