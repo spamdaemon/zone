@@ -1310,7 +1310,9 @@
         };
 
         /**
-         * Get the names of object.
+         * Get the names of values, services, etc. This can be useful, to transfer multiple objects into some other
+         * system, like angular. This function doesn't consider includes in the exported names. Only values directly
+         * defined in a module are considered for resolution.
          * 
          * @expose
          * @param {...}
@@ -1335,7 +1337,6 @@
                     resolvable = ROOT.__modules[name].__values[value];
                     if (resolvable.access === PUBLIC_ACCESS && filter(resolvable.fullName)) {
                         result.push(resolvable.fullName);
-                        console.log("Resolvable " +resolvable.fullName+", "+resolvable.access);
                     }
                 }
             }

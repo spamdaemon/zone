@@ -1,14 +1,13 @@
 describe("zone for unit testing", function() {
     "use strict";
 
-    //the inject function uses late-binding to the current in-scope zone object.
+    // the inject function uses late-binding to the current in-scope zone object.
     var inject = function() {
         var args = arguments;
         return function() {
-            return zone.inject.apply(null,args)();
+            return zone.inject.apply(null, args)();
         };
     };
-
 
     beforeEach(function() {
         zone = zone.makeZone();
@@ -73,4 +72,10 @@ describe("zone for unit testing", function() {
         expect(interceptedValue).toBe("bar");
     });
 
+    it("should make sure that the example for exporting public names works", function() {
+        var z = zone.makeZone();
+        z("a.b.c").value('foo', 'bar');
+        var names = z.names(/foo$/);
+        expect(names[0]).toBe('a.b.c.foo');
+    });
 });

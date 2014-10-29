@@ -437,13 +437,15 @@ The return value of this function is the new zone object itself.
 
 ## zone.names()
 
-Get the names of all publicly accessible values. An optional filter or regular expression
-can be used to filter the names.
+Get the names of all publicly accessible values. An optional filter function or regular expression
+can be used to filter the names. The filter function takes the a single parameters, which is the 
+full name of the variable.
 
 ```js
-  zone("a.b.c").value('foo','bar');
-  var names = zone.names();
-  expect(names[0]).toBe('a.b.c.foo');
+	var z = zone.makeZone();
+	z("a.b.c").value('foo', 'bar');
+	var names = z.names(/foo$/);
+	expect(names[0]).toBe('a.b.c.foo');
 ```
 
 
