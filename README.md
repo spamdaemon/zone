@@ -70,6 +70,7 @@ API
   * [zone.version()](#zoneversion)
 
 1. Optional Modules
+  * [$Array](#array)
   * [$console](#console)
   * [$document](#document)
   * [$indexedDB](#indexeddb)
@@ -467,6 +468,10 @@ All these values are defined at the top-level zone, e.g.
 
 NOTE: these modules are lost when a zone is reset, or when a new zone is created.
 
+## $Array
+
+This is a wrapper for the global   Array object.
+
 ## $console
 
 This is a wrapper for window.console and is modified to make it work across browsers.
@@ -483,10 +488,9 @@ This is a wrapper for window.indexedDB.
 
 ## $Math
 
-This is a wrapper for   window.Math.
+This is a wrapper for the global  Math object.
 
 ## $window
-
 
 This is a wrapper for the global window object.
 

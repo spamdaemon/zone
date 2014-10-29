@@ -4,6 +4,11 @@
 describe("modules", function() {
     "use strict";
 
+    it("should define the Array", function() {
+        expect(SavedZone.get("$Array")).toBe(Array);
+        expect(SavedZone.get("$Array")).toBe(window.Array);
+    });
+
     it("should define the console", function() {
         expect(SavedZone.get("$console")).toBe(window.console);
     });
@@ -17,6 +22,7 @@ describe("modules", function() {
     });
 
     it("should define the Math", function() {
+        expect(SavedZone.get("$Math")).toBe(Math);
         expect(SavedZone.get("$Math")).toBe(window.Math);
     });
 

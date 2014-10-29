@@ -1,7 +1,4 @@
 /**
- * Get access to the worker constructor.
+ * Get access to the Math object.
  */
-zone().factory("$Math", [ '$window' ], function(window) {
-    'use strict';
-    return window.Math;
-});
+zone().value("$Math", Math);
