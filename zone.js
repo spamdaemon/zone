@@ -552,6 +552,9 @@
             this.module = findModule(this.modulePath, false);
             this.local = path.substr(i + 1);
         }
+        if (this.modulePath === '.') {
+            console.log("NULL PATH");
+        }
     };
 
     /**

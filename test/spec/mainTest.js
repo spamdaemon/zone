@@ -820,7 +820,7 @@ describe("zone", function() {
         zone("a.b").value("-foo", 'bar');
 
         var names = zone.names();
-        expect(names.length).toBe(2);
+        expect(names.length).toBe(3);
         expect(names).toContain('a.b.c.foo');
         expect(names).toContain('x.y.z.foo');
     });
@@ -845,5 +845,21 @@ describe("zone", function() {
         });
         expect(names.length).toBe(1);
         expect(names).toContain('x.y.z.foo');
+    });
+
+    it("should  create a value", function() {
+       zone.value('foo','bar'); 
+    });
+    
+    it("should define $$zone as a predefined injectable object", function() {
+        var Z = zone.get("$$zone");
+        expect(Z).toBe(zone);
+    });
+    
+    it("should copy $$zone properly when copying a zone", function() {
+        var Z = zone.get("$$zone");
+        var zone2 = zone.copyZone();
+        var Z2 = zone2.get('$$zone');
+        expect(Z2).toBe(zone2);
     });
 });

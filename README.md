@@ -187,6 +187,13 @@ Factory functions and service constructors are eligible for injection. The funct
 
 It is possible to use interceptors on the first lookup of a name to modify the value or even return a new value.
 
+Note: the current zone is defined as a value and can be used for injection:
+```js
+var z = zone.get('$$zone');
+expect(z).toBe(zone);
+```
+
+
     
 ### Module.factory(name,function)
 Bind a factory function to a name within the given module. The factory function will be executed and its return value is the value returned upon lookup or injection of the name. 

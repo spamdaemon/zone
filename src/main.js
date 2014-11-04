@@ -23,6 +23,9 @@
     /** @const */
     var PUBLIC_ACCESS = 0;
 
+    /** The the default injectable */
+    var ZONE_INJECTABLE = '$$zone';
+
     /**
      * Given a name, determine the access and type values.
      * 
@@ -331,10 +334,12 @@
         var m = root.__modules[name], names, i, n;
         m = m || null;
         if (!m && createIfNotFound) {
-            names = name.split(/\./);
             m = root;
-            for (i = 0, n = names.length; i < n; ++i) {
-                m = m.create(names[i], null);
+            if (name !== '.') {
+                names = name.split(/\./);
+                for (i = 0, n = names.length; i < n; ++i) {
+                    m = m.create(names[i], null);
+                }
             }
         }
         return m;
@@ -1353,6 +1358,9 @@
         zone.version = function() {
             return VERSION;
         };
+
+        /** Always inject this zone into itself */
+        ROOT.__values[ZONE_INJECTABLE] = new Resolvable(ROOT, ZONE_INJECTABLE, PUBLIC_ACCESS, createValueDescriptor(zone));
 
         return zone;
     };
