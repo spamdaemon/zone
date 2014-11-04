@@ -213,6 +213,7 @@ describe("zone", function() {
 
     it("should support optional parameters", function() {
         zone().factory("foo", [ "?x.bar" ], function(x) {
+            expect(x).toBeUndefined();
             return "foo";
         });
 
@@ -848,18 +849,65 @@ describe("zone", function() {
     });
 
     it("should  create a value", function() {
-       zone.value('foo','bar'); 
+        zone.value('foo', 'bar');
     });
-    
+
     it("should define $$zone as a predefined injectable object", function() {
         var Z = zone.get("$$zone");
         expect(Z).toBe(zone);
     });
-    
+
     it("should copy $$zone properly when copying a zone", function() {
         var Z = zone.get("$$zone");
         var zone2 = zone.copyZone();
         var Z2 = zone2.get('$$zone');
         expect(Z2).toBe(zone2);
+    });
+
+    it("should inject multiple values in a module", function() {
+        zone('child').value('foo', 'FOO');
+        zone('child').value('bar', 'BAR');
+        var fn = zone.inject([ 'child.*' ], function(values) {
+            return values;
+        });
+        var object = fn();
+        expect(object.foo).toBe('FOO');
+        expect(object.bar).toBe('BAR');
+    });
+
+    it("should inject multiple values in a module", function() {
+        zone('child').value('foo', 'FOO');
+        zone('child').value('bar', 'BAR');
+        zone('child').value('-baz1', 'BAZ1');
+        zone('child').value('#baz2', 'BAZ1');
+        var object = zone.get('child.*');
+        expect(object.foo).toBe('FOO');
+        expect(object.bar).toBe('BAR');
+        expect(object.baz1).toBeUndefined();
+        expect(object.baz2).toBeUndefined();
+    });
+
+    it("should inject multiple values in a module", function() {
+        zone('child').value('foo', 'FOO');
+        zone('child').value('bar', 'BAR');
+        zone('child').value('-baz1', 'BAZ1');
+        zone('child').value('#baz2', 'BAZ1');
+        var object = zone('child').get('*');
+        expect(object.foo).toBe('FOO');
+        expect(object.bar).toBe('BAR');
+        expect(object.baz1).toBeUndefined();
+        expect(object.baz2).toBeUndefined();
+    });
+
+    it("should inject multiple values in a module", function() {
+        var object = zone('child').get('*');
+    });
+
+    it("should check formals", function() {
+        var fn = function() {
+            zone().factory('f', [ 'a', 'b' ], function(a, b, c) {
+            });
+        };
+        expect(fn).toThrow();
     });
 });

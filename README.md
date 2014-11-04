@@ -341,11 +341,29 @@ is roughly equivalent to this code:
 
 and will yield the array ```[1,2,3,4]```
 
-When using explicit names for the function parameters, then a couple of options are available to control what is injected:
+When using explicit names for the function parameters, then various options are available to control what is injected:
  1. if the name starts with a `?`, the corresponding function parameter is optional and if the name cannot be resolved to a value, then it is set to undefined.
  1. if the name starts with a `#`, the the corresponding function parameter becomes a parameter of the returned function.
+ 1. if the name of the injectable is '*', then all accessible values defined in the module will be injected as a hash, indexed by the name of the value.
   
 It is not allowed to use both `?` and `#` in the same name.
+
+Some examples:
+```js
+	zone('child').value('a','A');
+	zone('child').value('b','B');
+	zone('child').value('-c','C');
+	var values = zone.inject(['child.*'],function(values) { return values; })();
+	expect(values.a).toBe('A');
+	expect(values.b).toBe('B');
+```
+
+```js
+	zone('child').value('a','A');
+	var value = zone.inject(['?child.b'],function(b) { return b; })();
+	expect(value).toBeUndefined();
+```
+
 
 # Zone Functions
 ## zone.asFunction(function)

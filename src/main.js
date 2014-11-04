@@ -376,7 +376,7 @@
     var checkFormals = function(names, func) {
         var formals = parseFormalParameters(func);
         if (formals !== null && formals.length !== names.length) {
-            throw new Error('Formals and parameter names do not match');
+            throw new Error('Formals and parameter names do not match : ' + JSON.stringify(names));
         }
     };
 
@@ -656,7 +656,7 @@
      * @return {?Resolvable} a resolvable object or null if not found
      */
     var findResolvable = function(name, start, access, recurse, recursionGuard) {
-        var i, n, local, depends;
+        var i, n, key, R, local, depends;
         var current, resolvable, imports;
         var path = new Path(start.__root, name, start);
         current = path.module;
@@ -666,9 +666,19 @@
             access = Math.min(access, getAccess(start, current));
         }
 
+        resolvable = null;
+        if (local === '*') {
+            resolvable = {};
+            for (key in current.__values) {
+                R = current.__values[key];
+                if (R.isAccessible(access)) {
+                    resolvable[key] = R;
+                }
+            }
+        }
+
         recursionGuard = recursionGuard || {};
 
-        resolvable = null;
         while (!resolvable && current) {
 
             // first, check the module's locally defined resolvables
@@ -819,6 +829,14 @@
      */
     var resolveValue = function(R) {
         var fn, interceptors, module, interceptor, interceptFN, value, i, n;
+
+        if (!(R instanceof Resolvable)) {
+            value = {};
+            for (i in R) {
+                value[i] = resolveValue(R[i]);
+            }
+            return value;
+        }
 
         if (R.hasValue) {
             return R.value;
