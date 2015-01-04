@@ -18,6 +18,7 @@ if [ -e $COMPILER_JAR ]; then
     gzip --best --keep ${PROJECT_NAME}.min.js;
     gzip --best --keep ${MODULES_NAME}.min.js;
 fi;
+cp src/main.js zone.js;
 
 
 # run tests
