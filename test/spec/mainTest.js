@@ -643,8 +643,8 @@ describe("zone", function() {
     it("should use the correct module for resolving interceptor dependencies", function() {
         zone("base.extension").interceptor("base.service", [ "greeting" ], function(greeting) {
             return function(s) {
-                s.say = greeting;
-                return s;
+                s().say = greeting;
+                return s();
             };
         }).value("-greeting", "hallo");
 
@@ -750,7 +750,7 @@ describe("zone", function() {
             return true;
         }, function() {
             return function(x) {
-                return x + "intercepted";
+                return x() + "intercepted";
             };
         });
         expect(zone("myzone").get("foo")).toBe("foointercepted");

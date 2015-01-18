@@ -828,7 +828,7 @@
      *             if a cyclic dependency was detected
      */
     var resolveValue = function(R) {
-        var fn, interceptors, module, interceptor, interceptFN, value, i, n;
+        var fn, valueFN, interceptors, module, interceptor, interceptFN, value, i, n;
 
         if (!(R instanceof Resolvable)) {
             value = {};
@@ -846,11 +846,11 @@
             throw new Error('Cyclic dependency detected with ' + R.fullName);
         }
 
+        
         R.resolving = true;
         if (R.descriptor instanceof ValueDescriptor) {
             value = R.descriptor.value;
         } else {
-
             try {
                 try {
                     fn = injectFunction(R.module, PRIVATE_ACCESS, R.descriptor, false, true);
@@ -873,9 +873,13 @@
             }
         }
 
+        valueFN = function() {
+            return value;
+        };
+        
         interceptors = R.module.__root.__interceptors;
 
-        // apply all interceptors, which is in arbitrary order
+        // apply all interceptors, in the order in which they were registered
         for (i = 0, n = interceptors.length; i < n; ++i) {
             interceptor = interceptors[i];
             if (interceptor.selector(R.module.__fullName, R.name)) {
@@ -889,7 +893,7 @@
                 if (interceptFN === null) {
                     throw new Error('Failed to resolve interceptor for ' + R.name);
                 }
-                value = interceptFN()(value, R.module.__fullName, R.name);
+                value = interceptFN()(valueFN, R.module.__fullName, R.name);
             }
         }
 

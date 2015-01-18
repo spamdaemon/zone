@@ -251,13 +251,13 @@ and that later on some would like to use the greeting, but modify it slightly to
 ```js
 var module = zone("greeting");
 module.interceptor("phrase",['language', function(lang) {
-   return function(v,moduleName,VariableName) {
+   return function(valueFN,moduleName,VariableName) {
       // if the language is German, return a specific greeting
       if (lang === 'de') {
         return "Hallo, Welt!";
       }
       // return the default greeting
-      return v;
+      return valueFN();
    };
 }]);
 
@@ -265,6 +265,7 @@ module.value("language",'de');
 ```
 Thus, ```zone.get('greeting.phrase')``` will now always yield "Hallo, Welt!" instead of the default "Hello, World!".
 
+As shown in the example, the interception function takes three parameters, the value function, which can be used to access the intercepted value, the name of the module where the value is defined,  and the name of the object in the module that defines the value.
 
 Interceptors can also take a ```function(moduleName,localName)``` as the first parameter to provide a more generic mechanism for intercepting values. For example, using this interceptor, name resolutions can be logged for any value in the module:
 ```js
@@ -272,8 +273,8 @@ zone().interceptor(function(mod,name) {
 	return mod === 'FOO';
 }, function() {
     return function(v, m, l) {
-       console.log("Trace: "+m+", "+l+" : "+JSON.stringify(v));
-       return v;
+       console.log("Trace: "+m+", "+l+" : "+JSON.stringify(v()));
+       return v();
     };
 });
 ```

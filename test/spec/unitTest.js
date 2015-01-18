@@ -29,7 +29,7 @@ describe("zone for unit testing", function() {
                     return "Hallo, Welt!";
                 }
                 // return the default greeting
-                return v;
+                return v();
             };
         } ]);
 
@@ -62,8 +62,8 @@ describe("zone for unit testing", function() {
             return function(v, m, l) {
                 interceptedModule = m;
                 interceptedLocal = l;
-                interceptedValue = v;
-                return v + 'intercepted';
+                interceptedValue = v();
+                return v() + 'intercepted';
             };
         });
         expect(zone("myzone").get("foo")).toBe("barintercepted");
