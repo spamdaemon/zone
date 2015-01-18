@@ -738,7 +738,7 @@
      *            module the module
      * @param {number}
      *            access the access
-     * @param {FunctionDescriptor}
+     * @param {FunctionDescriptor|ValueDescriptor}
      *            descriptor the descriptor for the function
      * @param {boolean}
      *            allowFreeArguments true to allow free arguments
@@ -819,6 +819,103 @@
     };
 
     /**
+     * Wrap a function such that repeated calls yield the same value.
+     * 
+     * @param {!Function} fn
+     *            a function that takes no arguments
+     * @return {!Function} a function
+     */
+    var createWrappedValue = function(fn) {
+        var value, status = 0;
+        return function() {
+            if (status === 0) {
+                try {
+                    value = fn();
+                    status = 1;
+                } catch (e) {
+                    value = e;
+                    status = -1;
+                    throw e;
+                }
+            } else if (status < 0) {
+                throw value;
+            }
+            return value;
+        };
+    };
+
+    /**
+     * Create a the value for a resolvable.
+     * 
+     * @param {!Resolvable}
+     *            R the resolve to be instantiated
+     * @return {!Function} a function that creates the value
+     */
+    var instantiateValue = function(R) {
+        if (R.descriptor instanceof ValueDescriptor) {
+            // we can directly return the value
+            return function() {
+                return R.descriptor.value;
+            };
+        }
+        return createWrappedValue(function() {
+            var fn;
+            try {
+                fn = injectFunction(R.module, PRIVATE_ACCESS, R.descriptor, false, true);
+            } catch (error) {
+                console.log('Failed to resolve ' + R.fullName);
+                throw error;
+            }
+            if (fn === null) {
+                console.log('Failed to resolve ' + R.fullName);
+                throw new Error('Failed to resolve ' + R.fullName);
+            }
+            return fn();
+        });
+    };
+
+    /**
+     * Create an interceptor.
+     * 
+     * @param {!Resolvable}
+     *            R the resolvable to be instantiated
+     * @param {!Array<Interceptor>} interceptors an array of interceptors
+     * @param {!number}
+     *            index of an interceptor in interceptors
+     * @return {!Function} a function that produces the intercepted value
+     */
+    var instantiateInterceptor = function(R, interceptors, index) {
+        var fn, interceptFN, interceptor;
+        if (index < 0) {
+            return instantiateValue(R);
+        }
+
+        interceptor = interceptors[index];
+        if (!interceptor.selector(R.module.__fullName, R.name)) {
+            return instantiateInterceptor(R, interceptors, index - 1);
+        }
+
+        return createWrappedValue(function() {
+            var module, interceptFN;
+            try {
+                module = getModule(R.module.__root, interceptor.name, true);
+                interceptFN = injectFunction(module, PRIVATE_ACCESS, interceptor.descriptor, false, true);
+            } catch (error) {
+                console.log('Interceptor for ' + R.fullName + ' failed');
+                throw error;
+            }
+            if (interceptFN === null) {
+                throw new Error('Failed to resolve interceptor for ' + R.name);
+            }
+
+            // obtain the function that gets us the value that of the intercepted object
+            fn = instantiateInterceptor(R, interceptors, index - 1);
+
+            return interceptFN()(fn, R.module.__fullName, R.name);
+        });
+    };
+
+    /**
      * Resolve the value of a resolvable object.
      * 
      * @param {!Resolvable}
@@ -828,7 +925,7 @@
      *             if a cyclic dependency was detected
      */
     var resolveValue = function(R) {
-        var fn, valueFN, interceptors, module, interceptor, interceptFN, value, i, n;
+        var fn, i, value;
 
         if (!(R instanceof Resolvable)) {
             value = {};
@@ -846,55 +943,14 @@
             throw new Error('Cyclic dependency detected with ' + R.fullName);
         }
 
-        
         R.resolving = true;
-        if (R.descriptor instanceof ValueDescriptor) {
-            value = R.descriptor.value;
-        } else {
-            try {
-                try {
-                    fn = injectFunction(R.module, PRIVATE_ACCESS, R.descriptor, false, true);
-                } catch (error) {
-                    console.log('Failed to resolve ' + R.fullName);
-                    throw error;
-                }
-                if (fn === null) {
-                    console.log('Failed to resolve ' + R.fullName);
-                    throw new Error('Failed to resolve ' + R.fullName);
-                }
-            } finally {
-                R.resolving = false;
-            }
-
-            try {
-                value = fn();
-            } catch (error) {
-                throw new Error('Failed to resolve ' + R.fullName + '\n' + error.toString());
-            }
-        }
-
-        valueFN = function() {
-            return value;
-        };
-        
-        interceptors = R.module.__root.__interceptors;
-
-        // apply all interceptors, in the order in which they were registered
-        for (i = 0, n = interceptors.length; i < n; ++i) {
-            interceptor = interceptors[i];
-            if (interceptor.selector(R.module.__fullName, R.name)) {
-                try {
-                    module = getModule(R.module.__root, interceptor.name, true);
-                    interceptFN = injectFunction(module, PRIVATE_ACCESS, interceptor.descriptor, false, true);
-                } catch (error) {
-                    console.log('Interceptor for ' + R.fullName + ' failed');
-                    throw error;
-                }
-                if (interceptFN === null) {
-                    throw new Error('Failed to resolve interceptor for ' + R.name);
-                }
-                value = interceptFN()(valueFN, R.module.__fullName, R.name);
-            }
+        try {
+            fn = instantiateInterceptor(R, R.module.__root.__interceptors, R.module.__root.__interceptors.length - 1);
+            value = fn();
+        } catch (error) {
+            throw new Error('Failed to resolve ' + R.fullName + '\n' + error.toString());
+        } finally {
+            R.resolving = false;
         }
 
         R.value = value;

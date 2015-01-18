@@ -643,6 +643,7 @@ describe("zone", function() {
     it("should use the correct module for resolving interceptor dependencies", function() {
         zone("base.extension").interceptor("base.service", [ "greeting" ], function(greeting) {
             return function(s) {
+                console.log("Intercepting " + s().say + " with " + greeting);
                 s().say = greeting;
                 return s();
             };
@@ -655,6 +656,37 @@ describe("zone", function() {
         });
 
         expect(zone("base").get("greeter").greet).toBe("hallo");
+    });
+
+    it("interceptors should be invoked on-demand", function() {
+        var interceptor1 = false, interceptor2 = false;
+        var barInvoked = false;
+        zone().value('foo', 2);
+
+        zone().factory('bar', function() {
+            barInvoked = true;
+            return 1;
+        });
+        zone().interceptor('foo', [ 'bar', function(bar) {
+            return function(fn) {
+                interceptor1 = true;
+                return fn();
+            };
+        } ]);
+
+        zone().interceptor('foo', function() {
+            return function(fn) {
+                interceptor2 = true;
+                return 1;
+            };
+        });
+
+        var value = zone.get('foo');
+        expect(interceptor2).toBe(true);
+        expect(value).toBe(1);
+        // interceptor 1 and its dependencies should not be invoked
+        expect(interceptor1).toBe(false);
+        expect(barInvoked).toBe(false);
     });
 
     it("should support verify long function declarations", function() {

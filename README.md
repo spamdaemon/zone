@@ -266,6 +266,7 @@ module.value("language",'de');
 Thus, ```zone.get('greeting.phrase')``` will now always yield "Hallo, Welt!" instead of the default "Hello, World!".
 
 As shown in the example, the interception function takes three parameters, the value function, which can be used to access the intercepted value, the name of the module where the value is defined,  and the name of the object in the module that defines the value.
+At the time the interceptor is invoked, the intercepted value has not been determined yet and its creation may thus fail! 
 
 Interceptors can also take a ```function(moduleName,localName)``` as the first parameter to provide a more generic mechanism for intercepting values. For example, using this interceptor, name resolutions can be logged for any value in the module:
 ```js
