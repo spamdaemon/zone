@@ -2,7 +2,7 @@ Zone API
 ========
 
 This library provides a way to organize code in modules with automatic dependency management. Another feature is dependency injection for singleton objects and services.
-This is small library is basically inspired by [AngularJS](https://angularjs.org/).
+This small library is basically inspired by [AngularJS](https://angularjs.org/).
 
 
 Features
@@ -114,7 +114,7 @@ catch (notfound) {
 
 Modules provide a namespace for name-value pairs. Name-value pairs are constant for the duration of the application, i.e once bound, they cannot be rebound. Modules can be created implicitly or explicitly, but in either case, they can be configured as long as no name lookups have been performed by the module.
 
-Names in a module can be bound as private, protected, or public names. Private names are visible only to other names in the same module, protected names are visible from child modules, and public names are visible by anyone. 
+Names in a module can be bound as private, protected, or public names. Private names are visible only within the same module, protected names are visible from child modules, and public names are visible by anyone. 
 
 It is possible to use factory functions or constructor functions to provide the value to which name is bound at runtime. These functions are only called once to establish the bound value, for the duration of the module, and they are subject to injection. There are three different ways in which constructor and factory functions can be specified:
  1. a normal function, such as `function(foo,bar)`;  when functions are specified in this way, the names of the parameters are used to lookup values in the same module and those values are passed to the function (factory or constructor). 
@@ -134,7 +134,7 @@ The first way of specifying functions is discouraged, because it suffers from a 
  1. When using code optimizers, such as Google closure, the functions argument names will be changed and so they cannot be used to lookup values anymore.
  1. If there are too many parameters, then the injector cannot properly determine the function signature.
 
-On the other hand, using two alternate approaches allow some control over the injected values:
+On the other hand, using the two alternate approaches allow some control over the injected values:
  1. If the name starts with a `?` character, then it is assumed to be optional and no error is thrown if the value is unknown. The corresponding function parameter is bound to `undefined`.
 
 ## Setting up a module
@@ -212,9 +212,9 @@ Bind a constructor function to the given name in the module. The constructor is 
  // inject bar into the service
  zone().value("bar","bar");
  zone().service("foo",['bar'], function(b) { 
-    this.get = function() { return b; };
+    this.baz = function() { return b; };
  });
- expect(zone.get("foo").get()).toBe("bar");
+ expect(zone.get("foo").baz()).toBe("bar");
 ```
 
 ### Module.value(name,value)
@@ -241,7 +241,7 @@ and sealed and can thus not be modified in any way.
 
 It is possible to extend or modify existing module objects by intercepting their creation. The name is that of an object in the module and the function is an injectable function that returns a function of a single parameter, which is the module object. The following contrived example illustrates how interceptors can be used.
 
-Assume the basic module is define in some file, greeting.js
+Assume the basic module is defined in the file greeting.js
 ```js
 var module = zone("greeting");
 module.value("phrase","Hello, World!");
