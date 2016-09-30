@@ -17,7 +17,7 @@ Zone provides the ability to
 Unit Testing
 ------------
 
-Unit testing is done with [Jasmine](http://pivotal.github.io/jasmine/)
+Unit testing is done with [Jasmine](https://jasmine.github.io/)
 and [Karma](http://karma-runner.github.io/).
 
 
